@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>スタッフ勤怠実績管理表</title>
+    <style>
+        /* --- 画面表示用スタイル --- */
+        body { 
+            font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Meiryo", sans-serif; 
+            padding: 20px; 
+            background: #f0f4f8; 
+            color: #222; 
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1); 
+        }
+        
+        .header-top { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 25px; 
+            border-bottom: 3px solid #0056b3; 
+            padding-bottom: 15px; 
+            gap: 20px; 
+        }
+        .logo-area img { height: 45px; width: auto; }
+        h1 { font-size: 1.6rem; margin: 0; color: #004494; font-weight: 800; }
+        
+        .month-selector { 
+            padding: 10px 16px; 
+            font-size: 1rem; 
+            border: 2px solid #0056b3; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            background: #fff; 
+            font-weight: bold; 
+            color: #0056b3; 
+        }
+
+        .setup-area { 
+            margin-bottom: 25px; 
+            background: #f8fafc; 
+            padding: 20px; 
+            border-radius: 12px; 
+            display: flex; 
+            gap: 20px; 
+            flex-wrap: wrap; 
+            border: 1px solid #cbd5e0; 
+        }
+        .input-item { flex: 1; min-width: 180px; }
+        label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.9rem; color: #2d3748; }
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #e2e8f0; 
+            border-radius: 10px; 
+            font-size: 1rem; 
+            box-sizing: border-box; 
+            color: #222;
+        }
+        input:focus { border-color: #0056b3; outline: none; }
+
+        .btn-group { display: flex; gap: 12px; margin-bottom: 25px; }
+        button { 
+            flex: 1; 
+            padding: 15px; 
+            font-size: 1.1rem; 
+            border: none; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            color: white; 
+            font-weight: 800; 
+            transition: all 0.2s; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-in { background: #27ae60; }
+        .btn-out { background: #e74c3c; }
+        .btn-absent { background: #8e44ad; }
+        .btn-print { background: #2c3e50; width: 100%; margin-top: 15px; }
+        .btn-del { 
+            background: #f39c12; 
+            color: #fff; 
+            padding: 5px 12px; 
+            font-size: 0.8rem; 
+            border-radius: 6px; 
+            box-shadow: none;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; }
+        th, td { 
+            border: 1px solid #cbd5e0; 
+            padding: 12px 4px; 
+            text-align: center; 
+            font-size: 0.95rem; 
+            color: #222; 
+            font-weight: 500; 
+        }
+        th { background: #edf2f7; font-weight: 800; color: #4a5568; }
+        
+        .sat-row td:not(.del-col) { background-color: #eef6ff !important; }
+        .sun-row td:not(.del-col), .holiday-row td:not(.del-col) { background-color: #fff0f0 !important; }
+        
+        .alert-missing-in { background-color: #feb2b2 !important; border: 2px solid #e53e3e; }
+        .alert-missing-out { background-color: #faf089 !important; }
+
+        .note-wrapper { position: relative; width: 92%; margin: auto; }
+        .note-select {
+            width: 100%;
+            padding: 8px 30px 8px 12px;
+            border: 2px solid #cbd5e0;
+            border-radius: 10px;
+            background: linear-gradient(to bottom, #ffffff, #f9fafb);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            text-align: center;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            color: #222;
+        }
+        .note-select:hover { border-color: #0056b3; background: #fff; }
+        .note-select:focus { border-color: #0056b3; outline: none; box-shadow: 0 0 0 3px rgba(0,86,179,0.1); }
+        
+        .note-wrapper::after {
+            content: "▼";
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.7rem;
+            color: #0056b3;
+            pointer-events: none;
+        }
+        
+        .print-note-text { display: none; }
+
+        .summary-table { margin-top: 25px; border: 1px solid #000; }
+        .summary-table th { background: #343a40; color: white; padding: 8px; border: 1px solid #000; font-weight: normal; font-size: 0.95rem; }
+        .summary-table td { font-size: 0.95rem; font-weight: normal; border: 1px solid #000; padding: 8px; }
+
+        .print-footer-note { display: none; }
+        .stamp-col { display: none; }
+        .print-header-info { display: none; }
+
+        @media print {
+            @page { size: A4 portrait; margin: 8mm 10mm; }
+            body { background: white; padding: 0; color: #000 !important; }
+            .container { box-shadow: none; padding: 0; width: 100%; }
+            .header-top, .setup-area, .btn-group, .btn-print, .del-col, .note-wrapper::after { display: none !important; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; border-color: #000 !important; }
+
+            .print-header-info { display: flex !important; justify-content: space-between; width: 100%; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 8px; }
+            
+            /* 【修正】右側エリアをロゴも含めて右寄せに */
+            .p-header-right { text-align: right; }
+            .p-name-box { border-bottom: 1.5px solid #000; display: inline-block; width: 160px; text-align: right; font-weight: bold; }
+
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #000 !important; font-size: 0.8rem; height: 24px; padding: 2px; color: #000 !important; font-weight: normal; }
+            .stamp-col { display: table-cell !important; width: 45px; }
+            
+            .note-select { display: none !important; }
+            .print-note-text { display: block !important; text-align: center; }
+
+            .summary-table { margin-top: 5px; background-color: transparent !important; }
+            .summary-table th, .summary-table td { background-color: transparent !important; color: #000 !important; font-size: 0.8rem; height: 25px; padding: 2px; }
+
+            .print-footer-note { 
+                display: block !important; 
+                margin-top: 15px; 
+                width: 100%; 
+                height: 50px; 
+                border: 1px solid #000 !important; 
+                padding: 5px; 
+                box-sizing: border-box; 
+                font-size: 0.8rem;
+                color: #000 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-top">
+        <div class="logo-area"><img src="logo.png" alt="JOYNUS ロゴ"></div>
+        <h1>スタッフ勤怠実績管理表</h1>
+        <input type="month" id="month-picker" class="month-selector" onchange="displayLogs()">
+    </div>
+    
+    <div class="print-header-info">
+        <div class="p-header-left">
+            <div style="font-size:1.4rem; font-weight:bold;" id="p-month-title"></div>
+            <div id="p-office-text" style="font-size:1.1rem; margin-top:5px;"></div>
+        </div>
+        <div class="p-header-right">
+            <div style="margin-bottom:8px;"><img src="logo.png" alt="ロゴ" style="height:35px;"></div>
+            <div style="font-size:1.1rem;">氏名：<span class="p-name-box" id="p-name-text"></span></div>
+        </div>
+    </div>
+
+    <div class="setup-area">
+        <div class="input-item">
+            <label>事業所名</label>
+            <select id="office-name" onchange="saveSetting()">
+                <option value="枚方駅前オフィス">枚方駅前オフィス</option>
+                <option value="ITEX京橋オフィス">ITEX京橋オフィス</option>
+                <option value="枚方＆ITEX京橋オフィス">枚方＆ITEX京橋オフィス</option>
+                <option value="ITEX丸ノ内オフィス">ITEX丸ノ内オフィス</option>
+                <option value="ITEX久屋大通オフィス">ITEX久屋大通オフィス</option>
+                <option value="ITEX伏見オフィス">ITEX伏見オフィス</option>
+            </select>
+        </div>
+        <div class="input-item">
+            <label>スタッフ名</label>
+            <input type="text" id="staff-name" placeholder="氏名を入力" oninput="saveSetting()">
+        </div>
+        <div class="input-item">
+            <label>打刻用の日付設定</label>
+            <input type="date" id="work-date">
+        </div>
+        <div class="input-item">
+            <label>基本休憩時間(分)</label>
+            <input type="number" id="break-minutes" value="60">
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn-in" onclick="record('in')">出勤</button>
+        <button class="btn-out" onclick="record('out')">退勤</button>
+        <button class="btn-absent" onclick="record('absent')">欠勤記録</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width:18%">日付</th>
+                <th style="width:10%">出勤</th>
+                <th style="width:10%">退勤</th>
+                <th style="width:8%">休憩</th>
+                <th style="width:10%">実労働(h)</th>
+                <th style="width:10%">残業(h)</th>
+                <th>備考</th>
+                <th class="stamp-col">管理者印</th>
+                <th class="del-col" style="width:8%">操作</th>
+            </tr>
+        </thead>
+        <tbody id="log-body"></tbody>
+    </table>
+
+    <table class="summary-table">
+        <tr>
+            <th>出勤日数</th><td id="total-days">0</td>
+            <th>欠勤</th><td id="total-absent">0</td>
+            <th>遅刻</th><td id="total-late">0</td>
+            <th>総実労働</th><td id="total-work-h">0.00</td>
+            <th>総残業</th><td id="total-over-h">0.00</td>
+        </tr>
+    </table>
+
+    <div class="print-footer-note">【備考】</div>
+
+    <button class="btn-print" onclick="preparePrint()">印刷プレビューを表示</button>
+</div>
+
+<script>
+    const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+    
+    function isHoliday(dateStr) {
+        const holidays = ["2026-01-01", "2026-01-12", "2026-02-11", "2026-02-23", "2026-03-20", "2026-04-29", "2026-05-03", "2026-05-04", "2026-05-05", "2026-05-06", "2026-07-20", "2026-08-11", "2026-09-21", "2026-09-22", "2026-09-23", "2026-10-12", "2026-11-03", "2026-11-23"];
+        return holidays.includes(dateStr);
+    }
+
+    window.onload = function() {
+        const now = new Date();
+        const yearMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+        document.getElementById('month-picker').value = yearMonth;
+        document.getElementById('work-date').value = `${yearMonth}-${now.getDate().toString().padStart(2, '0')}`;
+        document.getElementById('staff-name').value = localStorage.getItem('my_staff_name') || "";
+        document.getElementById('office-name').value = localStorage.getItem('my_office_name') || "枚方駅前オフィス";
+        displayLogs();
+    };
+
+    function saveSetting() {
+        localStorage.setItem('my_staff_name', document.getElementById('staff-name').value);
+        localStorage.setItem('my_office_name', document.getElementById('office-name').value);
+        displayLogs();
+    }
+
+    function record(type) {
+        const date = document.getElementById('work-date').value;
+        const breakMin = document.getElementById('break-minutes').value;
+        let data = JSON.parse(localStorage.getItem('attendance_data')) || {};
+        const now = new Date();
+        let h = now.getHours(), m = now.getMinutes();
+        if (!data[date]) data[date] = { in: "", out: "", break: breakMin, absent: false, note: "" };
+        if (type === 'in') { 
+            if (h < 9) { h = 9; m = 0; } // 9時前出勤の自動補正
+            data[date].in = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0'); 
+            data[date].absent = false; 
+        }
+        else if (type === 'out') { data[date].out = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0'); data[date].absent = false; }
+        else if (type === 'absent') { data[date].in = ""; data[date].out = ""; data[date].absent = true; data[date].note = "欠勤"; }
+        localStorage.setItem('attendance_data', JSON.stringify(data));
+        displayLogs();
+    }
+
+    function editValue(date, field) {
+        let data = JSON.parse(localStorage.getItem('attendance_data')) || {};
+        let newVal = prompt(`${field}を入力`, data[date][field] || "");
+        if (newVal !== null) { data[date][field] = newVal; localStorage.setItem('attendance_data', JSON.stringify(data)); displayLogs(); }
+    }
+
+    function handleNoteChange(date, val) {
+        let data = JSON.parse(localStorage.getItem('attendance_data')) || {};
+        if (val === "custom") {
+            let freeVal = prompt("備考を自由に入力してください", data[date].note || "");
+            if (freeVal !== null) data[date].note = freeVal;
+        } else if (val === "none") {
+            data[date].note = "";
+        } else {
+            data[date].note = val;
+        }
+        localStorage.setItem('attendance_data', JSON.stringify(data));
+        displayLogs();
+    }
+
+    function deleteDay(date) {
+        if(confirm(date + "を削除しますか？")) {
+            let data = JSON.parse(localStorage.getItem('attendance_data')) || {};
+            delete data[date]; localStorage.setItem('attendance_data', JSON.stringify(data)); displayLogs();
+        }
+    }
+
+    function parseToMin(str) {
+        if(!str) return null;
+        let clean = str.replace(/[！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/：/g, ':').replace(/\s+/g, '');
+        if(!clean.includes(':')) return null;
+        const parts = clean.split(':');
+        return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
+    }
+
+    function getMonday(d) {
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        return new Date(d.setDate(diff));
+    }
+
+    function displayLogs() {
+        let data = JSON.parse(localStorage.getItem('attendance_data')) || {};
+        const tbody = document.getElementById('log-body');
+        const selectedMonth = document.getElementById('month-picker').value;
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+        
+        tbody.innerHTML = '';
+        let tDays = 0, tAbsent = 0, tLate = 0, tWork = 0, tOver = 0;
+        let weeklyWorkMinutes = {}; 
+
+        if (selectedMonth) {
+            const [sYear, sMonth] = selectedMonth.split('-').map(Number);
+            let lastDay = (selectedMonth === todayStr.substring(0, 7)) ? now.getDate() : new Date(sYear, sMonth, 0).getDate();
+            for (let i = 1; i <= lastDay; i++) {
+                const dStr = `${sYear}-${sMonth.toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
+                if (!data[dStr]) data[dStr] = { in: "", out: "", break: "60", absent: false, note: "" };
+            }
+        }
+
+        Object.keys(data).sort().forEach(date => {
+            if (date.substring(0, 7) !== selectedMonth) return;
+            const d = data[date];
+            let rowWork = 0, rowOver = 0, isLate = false, rowClass = "", alertMsg = "";
+            const dateObj = new Date(date), isHol = isHoliday(date), dayIdx = dateObj.getDay();
+            if (isHol || dayIdx === 0) rowClass = "sun-row"; else if (dayIdx === 6) rowClass = "sat-row";
+
+            const mon = getMonday(new Date(date));
+            const weekKey = mon.toISOString().split('T')[0];
+            if (!weeklyWorkMinutes[weekKey]) weeklyWorkMinutes[weekKey] = 0;
+
+            if (!d.absent) {
+                if (!d.in && date === todayStr) { rowClass += " alert-missing-in"; alertMsg = "【未出勤】"; } 
+                else if (d.in && !d.out && date < todayStr) { rowClass += " alert-missing-out"; alertMsg = "【未退勤】"; }
+            }
+
+            if (!d.absent && d.in && d.out) {
+                const inMin = parseToMin(d.in), outMin = parseToMin(d.out), brMin = parseInt(d.break) || 0;
+                if (inMin > 540) isLate = true;
+                let rawWorkMin = outMin - inMin - brMin;
+                if (rawWorkMin > 0) {
+                    let dayWorkH = Math.floor(rawWorkMin / 15) * 0.25;
+                    // 週40時間超えの計算ロジック
+                    if (dayIdx >= 1 && dayIdx <= 5 && !isHol) {
+                        rowWork = dayWorkH; if (dayWorkH > 8) rowOver = dayWorkH - 8;
+                    } else {
+                        let currentWeeklyMin = weeklyWorkMinutes[weekKey];
+                        rowWork = dayWorkH;
+                        if (currentWeeklyMin >= 2400) rowOver = dayWorkH;
+                        else if (currentWeeklyMin + rawWorkMin > 2400) rowOver = Math.floor(((currentWeeklyMin + rawWorkMin) - 2400) / 15) * 0.25;
+                    }
+                    weeklyWorkMinutes[weekKey] += rawWorkMin;
+                }
+            }
+            
+            const row = tbody.insertRow();
+            if (rowClass.trim()) row.className = rowClass.trim();
+            row.insertCell(0).innerText = `${date.replace(/-/g, '/')} (${weekDays[dayIdx]})`;
+            const cIn = row.insertCell(1); cIn.innerText = d.in || ""; cIn.className = "editable"; cIn.onclick = () => editValue(date, 'in');
+            const cOut = row.insertCell(2); cOut.innerText = d.out || ""; cOut.className = "editable"; cOut.onclick = () => editValue(date, 'out');
+            const cBr = row.insertCell(3); cBr.innerText = (!d.in && !d.out) ? "" : (d.absent ? "" : (d.break || "")); cBr.className = "editable"; cBr.onclick = () => editValue(date, 'break');
+            row.insertCell(4).innerText = (!d.in || !d.out) ? "" : rowWork.toFixed(2);
+            row.insertCell(5).innerText = (!d.in || !d.out) ? "" : rowOver.toFixed(2);
+            
+            const cNote = row.insertCell(6);
+            let rawNote = (d.note || "").replace("【未出勤】", "").replace("【未退勤】", "").trim();
+            if (isLate) rawNote = "遅刻 " + rawNote;
+            const fullNote = (alertMsg + " " + rawNote).trim();
+
+            const wrapper = document.createElement("div"); wrapper.className = "note-wrapper";
+            const select = document.createElement("select"); select.className = "note-select";
+            select.onchange = (e) => handleNoteChange(date, e.target.value);
+
+            [{v:"none",t:"-- 選択 --"}, {v:"有給",t:"有給"}, {v:"半休",t:"半休"}, {v:"残務処理",t:"残務処理"}, {v:"custom",t:"自由入力..."}]
+            .forEach(opt => {
+                const o = document.createElement("option"); o.value = opt.v; o.text = opt.t;
+                if (fullNote === opt.v) o.selected = true; select.appendChild(o);
+            });
+
+            if (fullNote && !["有給", "半休", "残務処理", ""].includes(fullNote)) {
+                const co = document.createElement("option"); co.value = fullNote; co.text = fullNote; co.selected = true;
+                select.insertBefore(co, select.lastChild);
+            }
+            wrapper.appendChild(select);
+            cNote.appendChild(wrapper);
+
+            const printText = document.createElement("span"); printText.className = "print-note-text";
+            printText.innerText = (isHol && !d.note) ? "" : fullNote;
+            cNote.appendChild(printText);
+
+            row.insertCell(7).className = "stamp-col";
+            const cDel = row.insertCell(8); cDel.className = "del-col";
+            const delBtn = document.createElement("button"); delBtn.innerText = "消去"; delBtn.className = "btn-del"; delBtn.onclick = () => deleteDay(date);
+            cDel.appendChild(delBtn);
+
+            if (d.absent) tAbsent++; else if (d.in) tDays++;
+            tWork += rowWork; tOver += rowOver; if (isLate) tLate++;
+        });
+
+        document.getElementById('total-days').innerText = tDays;
+        document.getElementById('total-absent').innerText = tAbsent;
+        document.getElementById('total-late').innerText = tLate;
+        document.getElementById('total-work-h').innerText = tWork.toFixed(2);
+        document.getElementById('total-over-h').innerText = tOver.toFixed(2);
+    }
+
+    function preparePrint() {
+        const val = document.getElementById('month-picker').value;
+        const parts = val.split('-');
+        document.getElementById('p-month-title').innerText = `${parts[0]}年${parseInt(parts[1])}月分 タイムカード`;
+        document.getElementById('p-office-text').innerText = "事業所：" + document.getElementById('office-name').value;
+        document.getElementById('p-name-text').innerText = document.getElementById('staff-name').value;
+        window.print();
+    }
+</script>
+</body>
+</html>
