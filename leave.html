@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>休暇届</title>
     <style>
-        /* --- 基本デザイン（正常動作版へ差し戻し） --- */
+        /* --- 基本デザイン（ご提示のデザインを完全維持） --- */
         body { font-family: "MS UI Gothic", "Meiryo", sans-serif; background: #f0f4f8; padding: 20px; color: #000; margin: 0; }
         
         .container { 
@@ -37,14 +37,12 @@
         .period-line { display: block; }
         .period-val { display: inline-block; min-width: 45px; text-align: center; }
 
-        /* 種類エリア */
         .type-select-browser { width: 90%; padding: 8px; font-size: 1.1rem; font-family: inherit; border: 1px solid #ccc; border-radius: 4px; }
         .type-print-container { display: none; }
         .type-item { position: relative; padding: 0 5px; white-space: nowrap; }
         .circle-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 120%; height: 140%; border: 2px solid #000; border-radius: 50%; display: none; pointer-events: none; }
         .selected .circle-overlay { display: block; }
 
-        /* 入力エリア */
         .printable-cell { height: 100px !important; padding: 0 !important; overflow: hidden; }
         .content-input { 
             width: 100%; height: 100%; border: none; font-size: 1.2rem; font-family: inherit; 
@@ -170,11 +168,11 @@
         const parts = str.split(':');
         return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
     }
+    // ノートの文字からAM/PM半休を正確に取得する
     function getSubtype(dayData) {
         if (!dayData || !dayData.note || !dayData.note.includes("半休")) return "FULL";
-        const inMin = parseToMin(dayData.in), outMin = parseToMin(dayData.out);
-        if (inMin >= 780) return "AM_HALF";
-        if (outMin <= 840) return "PM_HALF";
+        if (dayData.note.includes("AM")) return "AM_HALF";
+        if (dayData.note.includes("PM")) return "PM_HALF";
         return "HALF";
     }
     function updateSheet() {
@@ -196,10 +194,16 @@
                 let prevDateStr = leaveDates[i-1], currDateStr = leaveDates[i];
                 let diff = (new Date(currDateStr) - new Date(prevDateStr)) / (1000 * 60 * 60 * 24);
                 let isConnected = false;
+                
                 if (diff === 1) {
                     let prevType = getSubtype(data[prevDateStr]), currType = getSubtype(data[currDateStr]);
-                    isConnected = !(prevType.includes("HALF") && currType.includes("HALF"));
+                    // 仕事を挟まないパターンのみ接続
+                    if (prevType === "FULL" && currType === "FULL") isConnected = true;
+                    else if (prevType === "FULL" && currType === "AM_HALF") isConnected = true;
+                    else if (prevType === "PM_HALF" && currType === "FULL") isConnected = true;
+                    else if (prevType === "PM_HALF" && currType === "AM_HALF") isConnected = true;
                 }
+                
                 if (isConnected) { tempGroup.push(currDateStr); } 
                 else { currentGroups.push([...tempGroup]); tempGroup = [currDateStr]; }
             }
