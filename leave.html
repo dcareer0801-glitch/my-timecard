@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>休暇届</title>
+    <style>
+        /* --- 基本デザイン（正常動作版へ差し戻し） --- */
+        body { font-family: "MS UI Gothic", "Meiryo", sans-serif; background: #f0f4f8; padding: 20px; color: #000; margin: 0; }
+        
+        .container { 
+            width: 170mm; 
+            margin: auto; 
+            background: white; 
+            padding: 15mm; 
+            box-sizing: border-box; 
+            min-height: 245mm;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .no-print { margin-bottom: 20px; padding: 12px; background: #eef2f7; border-radius: 8px; display: flex; gap: 10px; align-items: center; }
+        .btn-back { background: #34495e; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+        .btn-print { background: #2c3e50; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; flex-grow: 1; font-weight: bold; }
+
+        .top-date-area { text-align: right; font-size: 1.1rem; margin-bottom: 5px; height: 30px; }
+        .date-input-mini { border: none; border-bottom: 1px solid #ccc; width: 45px; text-align: center; font-size: 1.1rem; font-family: inherit; background: transparent; }
+        .date-input-year { width: 60px; }
+
+        .main-title { text-align: center; font-size: 2.2rem; font-weight: bold; border-top: 3px solid #000; border-bottom: 3px solid #000; padding: 10px 0; margin-bottom: 30px; letter-spacing: 1rem; text-indent: 1rem; }
+
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        td { border: 1px solid #000; height: 50px; font-size: 1.1rem; vertical-align: middle; text-align: center; position: relative; }
+        .label-cell { width: 100px; font-weight: bold; }
+
+        .period-content-cell { text-align: center; padding: 15px 0; line-height: 2.2; }
+        .period-line { display: block; }
+        .period-val { display: inline-block; min-width: 45px; text-align: center; }
+
+        /* 種類エリア */
+        .type-select-browser { width: 90%; padding: 8px; font-size: 1.1rem; font-family: inherit; border: 1px solid #ccc; border-radius: 4px; }
+        .type-print-container { display: none; }
+        .type-item { position: relative; padding: 0 5px; white-space: nowrap; }
+        .circle-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 120%; height: 140%; border: 2px solid #000; border-radius: 50%; display: none; pointer-events: none; }
+        .selected .circle-overlay { display: block; }
+
+        /* 入力エリア */
+        .printable-cell { height: 100px !important; padding: 0 !important; overflow: hidden; }
+        .content-input { 
+            width: 100%; height: 100%; border: none; font-size: 1.2rem; font-family: inherit; 
+            text-align: center; resize: none; background: transparent; 
+            box-sizing: border-box; padding: 15px; display: block; overflow-y: auto;
+        }
+
+        .print-text-overlay { display: none; }
+
+        .stamp-wrap { margin-top: auto; display: flex; justify-content: flex-end; padding-top: 50px; }
+        .stamp-table { width: 220px; }
+        .stamp-table td { height: 30px; font-size: 1rem; }
+        .stamp-box { height: 85px !important; }
+
+        @media print {
+            @page { size: auto; margin: 0; }
+            body { background: white; padding: 0; }
+            .container { width: 182mm; height: 257mm; padding: 15mm; margin: auto; }
+            .no-print { display: none !important; }
+            .date-input-mini { border-bottom: none !important; }
+            .type-select-browser { display: none !important; }
+            .type-print-container { display: flex !important; justify-content: center; align-items: center; width: 100%; height: 100%; font-size: 1.1rem; }
+            .content-input { display: none !important; }
+            .print-text-overlay { 
+                display: flex !important; align-items: center !important; justify-content: center !important;
+                position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+                padding: 10px; font-size: 1.1rem; line-height: 1.4; text-align: center; word-break: break-all;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="no-print">
+        <button class="btn-back" onclick="location.href='index2.html'">戻る</button>
+        <input type="month" id="month-picker" onchange="updateSheet()">
+        <select id="group-select" onchange="renderGroup(this.value)" style="flex-grow:1;"></select>
+        <button class="btn-print" onclick="window.print()">印刷実行</button>
+    </div>
+
+    <div class="top-date-area">
+        <input type="text" id="top-y" class="date-input-mini date-input-year">年 
+        <input type="text" id="top-m" class="date-input-mini">月 
+        <input type="text" id="top-d" class="date-input-mini">日
+    </div>
+
+    <div class="main-title">休暇届</div>
+
+    <table>
+        <tr>
+            <td class="label-cell">氏名</td>
+            <td><span id="p-name" style="font-size: 1.4rem; font-weight: bold;"></span></td>
+        </tr>
+    </table>
+
+    <div style="height: 15px;"></div>
+
+    <table>
+        <tr>
+            <td class="label-cell">期間</td>
+            <td class="period-content-cell">
+                <span class="period-line"><span id="from-y" class="period-val"></span> 年 <span id="from-m" class="period-val"></span> 月 <span id="from-d" class="period-val"></span> 日 から</span>
+                <span class="period-line"><span id="to-y" class="period-val"></span> 年 <span id="to-m" class="period-val"></span> 月 <span id="to-d" class="period-val"></span> 日 まで</span>
+                <span class="period-line" style="font-weight: bold; margin-top: 5px;"><span id="total-days"></span> 日間</span>
+            </td>
+        </tr>
+        <tr><td colspan="2" style="border:none; height:15px;"></td></tr>
+        <tr>
+            <td class="label-cell">種類</td>
+            <td>
+                <select id="type-select" class="type-select-browser" onchange="drawCircle(this.value)">
+                    <option value="有給休暇">有給休暇</option>
+                    <option value="慶弔休暇">慶弔休暇</option>
+                    <option value="産前産後休暇">産前産後休暇</option>
+                    <option value="特別休暇">特別休暇</option>
+                </select>
+                <div class="type-print-container">
+                    <div class="type-item" id="item-有給休暇">有給休暇<div class="circle-overlay"></div></div>
+                    <span style="margin:0 8px;">・</span>
+                    <div class="type-item" id="item-慶弔休暇">慶弔休暇<div class="circle-overlay"></div></div>
+                    <span style="margin:0 8px;">・</span>
+                    <div class="type-item" id="item-産前産後休暇">産前産後休暇<div class="circle-overlay"></div></div>
+                    <span style="margin:0 8px;">・</span>
+                    <div class="type-item" id="item-特別休暇">特別休暇<div class="circle-overlay"></div></div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-cell printable-cell">事由</td>
+            <td class="printable-cell">
+                <textarea id="p-reason" class="content-input" oninput="syncPrintText('p-reason', 'p-reason-print')"></textarea>
+                <div id="p-reason-print" class="print-text-overlay"></div>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-cell printable-cell">備考</td>
+            <td class="printable-cell">
+                <textarea id="p-note" class="content-input" oninput="syncPrintText('p-note', 'p-note-print')"></textarea>
+                <div id="p-note-print" class="print-text-overlay"></div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="stamp-wrap">
+        <table class="stamp-table">
+            <tr><td>承認日</td><td>承認印</td></tr>
+            <tr><td class="stamp-box"></td><td class="stamp-box"></td></tr>
+        </table>
+    </div>
+</div>
+
+<script>
+    let currentGroups = [];
+    function syncPrintText(sourceId, targetId) { document.getElementById(targetId).innerText = document.getElementById(sourceId).value; }
+    function drawCircle(selectedType) {
+        document.querySelectorAll('.type-item').forEach(el => el.classList.remove('selected'));
+        const target = document.getElementById('item-' + selectedType);
+        if (target) target.classList.add('selected');
+    }
+    function parseToMin(str) {
+        if(!str) return null;
+        const parts = str.split(':');
+        return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
+    }
+    function getSubtype(dayData) {
+        if (!dayData || !dayData.note || !dayData.note.includes("半休")) return "FULL";
+        const inMin = parseToMin(dayData.in), outMin = parseToMin(dayData.out);
+        if (inMin >= 780) return "AM_HALF";
+        if (outMin <= 840) return "PM_HALF";
+        return "HALF";
+    }
+    function updateSheet() {
+        const data = JSON.parse(localStorage.getItem('attendance_data')) || {};
+        const selectedMonth = document.getElementById('month-picker').value;
+        const staffName = localStorage.getItem('my_staff_name') || "";
+        document.getElementById('p-name').innerText = staffName;
+        const today = new Date();
+        document.getElementById('top-y').value = today.getFullYear();
+        document.getElementById('top-m').value = today.getMonth() + 1;
+        document.getElementById('top-d').value = today.getDate();
+        let leaveDates = Object.keys(data).filter(date => date.startsWith(selectedMonth) && (data[date].note.includes("有給") || data[date].note.includes("半休"))).sort();
+        const groupSelect = document.getElementById('group-select');
+        groupSelect.innerHTML = '';
+        currentGroups = [];
+        if (leaveDates.length > 0) {
+            let tempGroup = [leaveDates[0]];
+            for (let i = 1; i < leaveDates.length; i++) {
+                let prevDateStr = leaveDates[i-1], currDateStr = leaveDates[i];
+                let diff = (new Date(currDateStr) - new Date(prevDateStr)) / (1000 * 60 * 60 * 24);
+                let isConnected = false;
+                if (diff === 1) {
+                    let prevType = getSubtype(data[prevDateStr]), currType = getSubtype(data[currDateStr]);
+                    isConnected = !(prevType.includes("HALF") && currType.includes("HALF"));
+                }
+                if (isConnected) { tempGroup.push(currDateStr); } 
+                else { currentGroups.push([...tempGroup]); tempGroup = [currDateStr]; }
+            }
+            currentGroups.push([...tempGroup]);
+            currentGroups.forEach((group, index) => {
+                const opt = document.createElement('option');
+                opt.value = index;
+                const start = group[0].split('-')[2], end = group[group.length - 1].split('-')[2];
+                opt.text = (start === end) ? `${start}日` : `${start}日〜${end}日`;
+                groupSelect.appendChild(opt);
+            });
+            renderGroup(0);
+        }
+    }
+    function renderGroup(index) {
+        if (currentGroups.length === 0) return;
+        const group = currentGroups[index], data = JSON.parse(localStorage.getItem('attendance_data')) || {};
+        const firstDate = new Date(group[0]), lastDate = new Date(group[group.length - 1]);
+        document.getElementById('from-y').innerText = firstDate.getFullYear();
+        document.getElementById('from-m').innerText = firstDate.getMonth() + 1;
+        document.getElementById('from-d').innerText = firstDate.getDate();
+        document.getElementById('to-y').innerText = lastDate.getFullYear();
+        document.getElementById('to-m').innerText = lastDate.getMonth() + 1;
+        document.getElementById('to-d').innerText = lastDate.getDate();
+        let totalDays = 0, leaveNotes = [];
+        group.forEach(date => {
+            const dayData = data[date];
+            if (dayData.note.includes("半休")) { 
+                totalDays += 0.5; 
+                const sub = getSubtype(dayData);
+                leaveNotes.push(`${date.split('-')[2]}日:${sub === "AM_HALF" ? "AM半休" : "PM半休"}`); 
+            } else { totalDays += 1; }
+        });
+        document.getElementById('total-days').innerText = totalDays;
+        document.getElementById('type-select').value = "有給休暇";
+        drawCircle("有給休暇");
+        document.getElementById('p-reason').value = "私用の為";
+        document.getElementById('p-note').value = leaveNotes.join('、');
+        syncPrintText('p-reason', 'p-reason-print');
+        syncPrintText('p-note', 'p-note-print');
+    }
+    window.onload = function() {
+        const now = new Date();
+        document.getElementById('month-picker').value = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+        updateSheet();
+    };
+</script>
+</body>
+</html>
