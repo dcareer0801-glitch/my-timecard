@@ -5,12 +5,11 @@
     <title>スタッフ勤怠実績管理表</title>
     <link rel="icon" href="logo.png" type="image/png">
     <style>
-        /* --- 背景画像の設定（3枚目のワイド画像をフル活用） --- */
+        /* --- 画面表示用スタイル --- */
         body { 
             font-family: "Segoe UI", Roboto, sans-serif; 
             padding: 20px; 
             background-image: url('打刻.png');
-            /* 画面全体を覆うように設定 */
             background-size: cover; 
             background-repeat: no-repeat;
             background-position: center center; 
@@ -20,11 +19,9 @@
             margin: 0;
         }
 
-        /* --- コンテナの透過設定（中央の余白を活かして配置） --- */
         .container { 
             max-width: 1000px; 
             margin: 40px auto; 
-            /* 背景の文字が左右に分かれているので、中央の白背景を少し濃いめにして視認性をアップ */
             background: rgba(255, 255, 255, 0.92); 
             padding: 30px; 
             border-radius: 16px; 
@@ -34,7 +31,7 @@
             z-index: 1;
         }
 
-        /* ヘッダー・セットアップ等の共通スタイル */
+        /* 共通ヘッダー・入力エリア */
         .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; border-bottom: 3px solid #0056b3; padding-bottom: 15px; gap: 20px; }
         .logo-area img { height: 45px; width: auto; }
         h1 { font-size: 1.6rem; margin: 0; color: #004494; font-weight: 800; }
@@ -54,7 +51,6 @@
         .btn-leave { background: #8e44ad; width: 100%; margin-top: 10px; }
         .btn-del { background: #f39c12; color: #fff; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; }
         
-        /* テーブル透過設定 */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; background: rgba(255, 255, 255, 0.7); }
         th, td { border: 1px solid #cbd5e0; padding: 0; text-align: center; font-size: 0.95rem; color: #222; height: 48px; }
         th { background: rgba(237, 242, 247, 0.9); font-weight: 800; padding: 8px 4px; }
@@ -63,7 +59,6 @@
         .dot { display: none; width: 2px; height: 2px; background-color: black; border-radius: 50%; grid-column: 1; justify-self: center; }
         .time-val { grid-column: 2; text-align: center; line-height: 1; }
 
-        /* 行の色設定（自動スクロール・フラッシュ機能はJS側で維持） */
         .sat-row td:not(.del-col) { background-color: rgba(238, 246, 255, 0.8) !important; }
         .sun-row td:not(.del-col), .holiday-row td:not(.del-col) { background-color: rgba(255, 240, 240, 0.8) !important; }
         
@@ -73,7 +68,6 @@
         }
         .row-highlight { animation: highlight-flash 1.2s ease-out; z-index: 10; position: relative; }
 
-        /* 備考欄 */
         .note-wrapper { position: relative; width: 92%; margin: auto; }
         .note-select { width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 10px; background: #fff; font-size: 0.9rem; font-weight: 600; cursor: pointer; appearance: none; text-align: center; color: #222; }
         .note-wrapper::after { content: "▼"; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.7rem; color: #0056b3; pointer-events: none; }
@@ -84,32 +78,42 @@
         
         .print-note-text, .print-footer-note, .stamp-col, .print-header-info { display: none; }
 
-        /* 印刷レイアウト設定 */
+        /* --- 【最優先：印刷レイアウト修正】 --- */
         @media print {
-            @page { size: A4 portrait; margin: 7mm 10mm; }
-            body { background: white !important; background-image: none !important; padding: 0; color: #000 !important; width: 100%; }
-            .container { box-shadow: none; padding: 0; width: 190mm; margin: 0 auto; background: white !important; }
-            .header-top, .setup-area, .btn-group, .btn-print, .btn-leave, .del-col, .note-wrapper::after { display: none !important; }
-            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; border-color: #000 !important; }
+            @page { size: A4 portrait; margin: 5mm 8mm; } 
+            body { background: white !important; background-image: none !important; padding: 0 !important; margin: 0 !important; width: 100%; overflow: visible !important; }
             
-            .print-header-info { display: flex !important; justify-content: space-between; width: 100%; margin-bottom: 5px; border-bottom: 2px solid #000; padding-bottom: 5px; align-items: flex-end; }
+            .container { 
+                box-shadow: none !important; 
+                padding: 0 !important; 
+                margin: 0 auto !important; 
+                width: 100% !important; 
+                max-width: none !important; 
+                background: white !important; 
+            }
+            
+            .header-top, .setup-area, .btn-group, .btn-print, .btn-leave, .del-col, .note-wrapper::after { display: none !important; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            
+            .print-header-info { display: flex !important; justify-content: space-between; width: 100%; margin-bottom: 2px; border-bottom: 2px solid #000; padding-bottom: 2px; align-items: flex-end; }
             .p-header-right { text-align: right; }
             .p-name-box { border-bottom: 1.5px solid #000; display: inline-block; width: 180px; text-align: right; font-weight: bold; font-size: 1.2rem; }
             
-            table { width: 100%; border-collapse: collapse; margin-top: 5px; background: white !important; }
-            th, td { border: 1px solid #000 !important; font-size: 0.8rem; height: 23.8px !important; padding: 0 !important; color: #000 !important; }
+            table { width: 100% !important; border-collapse: collapse; margin-top: 2px; table-layout: fixed !important; }
+            th, td { border: 1px solid #000 !important; font-size: 0.75rem !important; height: 23.5px !important; color: #000 !important; padding: 0 !important; line-height: 23.5px !important; }
             
+            th:nth-child(1) { width: 17% !important; } 
             .dot { display: block !important; }
             .dot-hidden { display: none !important; } 
-            .time-val { font-size: 0.85rem !important; }
-
-            .stamp-col { display: table-cell !important; width: 50px; }
+            
+            .stamp-col { display: table-cell !important; width: 50px !important; }
             .note-select { display: none !important; }
-            .print-note-text { display: block !important; text-align: center; }
-            .summary-table { margin-top: 6px; }
-            .summary-table th { background: #f2f2f2 !important; color: #000 !important; font-size: 0.75rem; height: 24px; line-height: 24px; }
-            .summary-table td { background: #fff !important; color: #000 !important; font-size: 0.8rem; height: 24px; line-height: 24px; }
-            .print-footer-note { display: block !important; margin-top: 6px; width: 100%; height: 50px; border: 1px solid #000 !important; padding: 5px; box-sizing: border-box; font-size: 0.8rem; color: #000 !important; }
+            .print-note-text { display: block !important; }
+            
+            .summary-table { margin-top: 4px; width: 100% !important; }
+            .summary-table th { background: #f2f2f2 !important; color: #000 !important; font-size: 0.75rem !important; height: 22px !important; line-height: 22px !important; }
+            .summary-table td { background: #fff !important; color: #000 !important; font-size: 0.8rem !important; height: 22px !important; line-height: 22px !important; }
+            .print-footer-note { display: block !important; margin-top: 4px; width: 100%; height: 45px; border: 1px solid #000 !important; padding: 5px; box-sizing: border-box; font-size: 0.8rem; }
         }
     </style>
 </head>
