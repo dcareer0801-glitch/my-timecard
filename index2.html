@@ -5,14 +5,42 @@
     <title>スタッフ勤怠実績管理表</title>
     <link rel="icon" href="logo.png" type="image/png">
     <style>
-        /* --- 基本スタイル --- */
-        body { font-family: "Segoe UI", Roboto, sans-serif; padding: 20px; background: #f0f4f8; color: #222; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        /* --- 背景画像の設定（3枚目のワイド画像をフル活用） --- */
+        body { 
+            font-family: "Segoe UI", Roboto, sans-serif; 
+            padding: 20px; 
+            background-image: url('打刻.png');
+            /* 画面全体を覆うように設定 */
+            background-size: cover; 
+            background-repeat: no-repeat;
+            background-position: center center; 
+            background-attachment: fixed; 
+            background-color: #fff;
+            color: #222; 
+            margin: 0;
+        }
+
+        /* --- コンテナの透過設定（中央の余白を活かして配置） --- */
+        .container { 
+            max-width: 1000px; 
+            margin: 40px auto; 
+            /* 背景の文字が左右に分かれているので、中央の白背景を少し濃いめにして視認性をアップ */
+            background: rgba(255, 255, 255, 0.92); 
+            padding: 30px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15); 
+            backdrop-filter: blur(2px);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ヘッダー・セットアップ等の共通スタイル */
         .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; border-bottom: 3px solid #0056b3; padding-bottom: 15px; gap: 20px; }
         .logo-area img { height: 45px; width: auto; }
         h1 { font-size: 1.6rem; margin: 0; color: #004494; font-weight: 800; }
         .month-selector { padding: 10px 16px; font-size: 1rem; border: 2px solid #0056b3; border-radius: 10px; cursor: pointer; background: #fff; font-weight: bold; color: #0056b3; }
-        .setup-area { margin-bottom: 25px; background: #f8fafc; padding: 20px; border-radius: 12px; display: flex; gap: 20px; flex-wrap: wrap; border: 1px solid #cbd5e0; }
+        
+        .setup-area { margin-bottom: 25px; background: rgba(248, 250, 252, 0.85); padding: 20px; border-radius: 12px; display: flex; gap: 20px; flex-wrap: wrap; border: 1px solid #cbd5e0; }
         .input-item { flex: 1; min-width: 180px; }
         label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.9rem; color: #2d3748; }
         input, select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; box-sizing: border-box; color: #222; }
@@ -26,62 +54,41 @@
         .btn-leave { background: #8e44ad; width: 100%; margin-top: 10px; }
         .btn-del { background: #f39c12; color: #fff; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; }
+        /* テーブル透過設定 */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; background: rgba(255, 255, 255, 0.7); }
         th, td { border: 1px solid #cbd5e0; padding: 0; text-align: center; font-size: 0.95rem; color: #222; height: 48px; }
-        th { background: #edf2f7; font-weight: 800; padding: 8px 4px; }
+        th { background: rgba(237, 242, 247, 0.9); font-weight: 800; padding: 8px 4px; }
 
-        /* セル内をグリッドで分割：左5px + 残り全部 + 右5px(バランス用) */
-        .time-cell-inner {
-            display: grid;
-            grid-template-columns: 5px 1fr 5px; 
-            align-items: center;
-            height: 100%;
-            width: 100%;
-            cursor: pointer;
-        }
+        .time-cell-inner { display: grid; grid-template-columns: 5px 1fr 5px; align-items: center; height: 100%; width: 100%; cursor: pointer; }
+        .dot { display: none; width: 2px; height: 2px; background-color: black; border-radius: 50%; grid-column: 1; justify-self: center; }
+        .time-val { grid-column: 2; text-align: center; line-height: 1; }
 
-        /* 2pxの極小黒丸：印刷時のみ見える */
-        .dot {
-            display: none;
-            width: 2px;
-            height: 2px;
-            background-color: black;
-            border-radius: 50%;
-            grid-column: 1;
-            justify-self: center;
-        }
-        
-        .time-val {
-            grid-column: 2;
-            text-align: center;
-            line-height: 1;
-        }
-
-        .sat-row td:not(.del-col) { background-color: #eef6ff !important; }
-        .sun-row td:not(.del-col), .holiday-row td:not(.del-col) { background-color: #fff0f0 !important; }
-        .alert-missing-in { background-color: #feb2b2 !important; border: 2px solid #e53e3e; }
-        .alert-missing-out { background-color: #faf089 !important; }
+        /* 行の色設定（自動スクロール・フラッシュ機能はJS側で維持） */
+        .sat-row td:not(.del-col) { background-color: rgba(238, 246, 255, 0.8) !important; }
+        .sun-row td:not(.del-col), .holiday-row td:not(.del-col) { background-color: rgba(255, 240, 240, 0.8) !important; }
         
         @keyframes highlight-flash {
-            0% { background-color: #fff59d !important; transform: scale(1.02); box-shadow: 0 0 20px rgba(255, 235, 59, 0.8); }
+            0% { background-color: #fff59d !important; transform: scale(1.01); box-shadow: 0 0 20px rgba(255, 235, 59, 0.8); }
             100% { background-color: transparent; transform: scale(1); box-shadow: none; }
         }
         .row-highlight { animation: highlight-flash 1.2s ease-out; z-index: 10; position: relative; }
 
+        /* 備考欄 */
         .note-wrapper { position: relative; width: 92%; margin: auto; }
         .note-select { width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 10px; background: #fff; font-size: 0.9rem; font-weight: 600; cursor: pointer; appearance: none; text-align: center; color: #222; }
         .note-wrapper::after { content: "▼"; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.7rem; color: #0056b3; pointer-events: none; }
         
-        .summary-table { margin-top: 25px; border: 1px solid #000; width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .summary-table { margin-top: 25px; border: 1px solid #000; width: 100%; border-collapse: collapse; table-layout: fixed; background: #fff; }
         .summary-table th { background: #343a40; color: white; padding: 8px 2px; border: 1px solid #000; font-size: 0.85rem; }
         .summary-table td { border: 1px solid #000; padding: 8px 2px; text-align: center; font-weight: bold; background: #fff; font-size: 0.95rem; }
         
         .print-note-text, .print-footer-note, .stamp-col, .print-header-info { display: none; }
 
+        /* 印刷レイアウト設定 */
         @media print {
             @page { size: A4 portrait; margin: 7mm 10mm; }
-            body { background: white; padding: 0; color: #000 !important; width: 100%; }
-            .container { box-shadow: none; padding: 0; width: 190mm; margin: 0 auto; }
+            body { background: white !important; background-image: none !important; padding: 0; color: #000 !important; width: 100%; }
+            .container { box-shadow: none; padding: 0; width: 190mm; margin: 0 auto; background: white !important; }
             .header-top, .setup-area, .btn-group, .btn-print, .btn-leave, .del-col, .note-wrapper::after { display: none !important; }
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; border-color: #000 !important; }
             
@@ -89,7 +96,7 @@
             .p-header-right { text-align: right; }
             .p-name-box { border-bottom: 1.5px solid #000; display: inline-block; width: 180px; text-align: right; font-weight: bold; font-size: 1.2rem; }
             
-            table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 5px; background: white !important; }
             th, td { border: 1px solid #000 !important; font-size: 0.8rem; height: 23.8px !important; padding: 0 !important; color: #000 !important; }
             
             .dot { display: block !important; }
@@ -299,14 +306,11 @@
         const div = document.createElement("div");
         div.className = "time-cell-inner";
         div.onclick = () => editValue(date, field);
-
         const dot = document.createElement("span");
         dot.className = isManual ? "dot" : "dot dot-hidden";
-        
         const timeSpan = document.createElement("span");
         timeSpan.className = "time-val";
         timeSpan.innerText = val || "";
-
         div.appendChild(dot);
         div.appendChild(timeSpan);
         return div;
