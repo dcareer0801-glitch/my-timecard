@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>休暇届</title>
     <style>
-        /* --- 基本デザイン（ご提示のデザインを完全維持） --- */
+        /* --- 基本デザイン（デザインを完全維持） --- */
         body { font-family: "MS UI Gothic", "Meiryo", sans-serif; background: #f0f4f8; padding: 20px; color: #000; margin: 0; }
         
         .container { 
@@ -44,10 +44,17 @@
         .selected .circle-overlay { display: block; }
 
         .printable-cell { height: 100px !important; padding: 0 !important; overflow: hidden; }
+        
+        .note-container {
+            width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box;
+        }
+        .half-day-selector {
+            display: flex; align-items: center; gap: 5px; margin-bottom: 5px; font-size: 1rem;
+        }
+        .ampm-select { padding: 2px 5px; font-size: 0.9rem; }
         .content-input { 
-            width: 100%; height: 100%; border: none; font-size: 1.2rem; font-family: inherit; 
+            width: 90%; height: 40px; border: 1px solid #eee; font-size: 1.1rem; font-family: inherit; 
             text-align: center; resize: none; background: transparent; 
-            box-sizing: border-box; padding: 15px; display: block; overflow-y: auto;
         }
 
         .print-text-overlay { display: none; }
@@ -65,6 +72,8 @@
             .date-input-mini { border-bottom: none !important; }
             .type-select-browser { display: none !important; }
             .type-print-container { display: flex !important; justify-content: center; align-items: center; width: 100%; height: 100%; font-size: 1.1rem; }
+            
+            .note-container { display: none !important; }
             .content-input { display: none !important; }
             .print-text-overlay { 
                 display: flex !important; align-items: center !important; justify-content: center !important;
@@ -141,7 +150,7 @@
         <tr>
             <td class="label-cell printable-cell">備考</td>
             <td class="printable-cell">
-                <textarea id="p-note" class="content-input" oninput="syncPrintText('p-note', 'p-note-print')"></textarea>
+                <div id="note-input-area" class="note-container"></div>
                 <div id="p-note-print" class="print-text-overlay"></div>
             </td>
         </tr>
@@ -158,93 +167,135 @@
 <script>
     let currentGroups = [];
     function syncPrintText(sourceId, targetId) { document.getElementById(targetId).innerText = document.getElementById(sourceId).value; }
+    
     function drawCircle(selectedType) {
         document.querySelectorAll('.type-item').forEach(el => el.classList.remove('selected'));
         const target = document.getElementById('item-' + selectedType);
         if (target) target.classList.add('selected');
     }
-    function parseToMin(str) {
-        if(!str) return null;
-        const parts = str.split(':');
-        return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
+
+    function updatePrintNote() {
+        const selectors = document.querySelectorAll('.ampm-select');
+        let parts = [];
+        selectors.forEach(sel => {
+            const date = sel.dataset.date;
+            const ampm = sel.value;
+            if (ampm) parts.push(`${date}日:${ampm}半休`);
+        });
+        
+        const extraNote = document.getElementById('extra-note')?.value || "";
+        let finalStr = parts.join('、');
+        if (extraNote) finalStr += (finalStr ? ' ' : '') + extraNote;
+        
+        document.getElementById('p-note-print').innerText = finalStr;
     }
-    // ノートの文字からAM/PM半休を正確に取得する
-    function getSubtype(dayData) {
-        if (!dayData || !dayData.note || !dayData.note.includes("半休")) return "FULL";
-        if (dayData.note.includes("AM")) return "AM_HALF";
-        if (dayData.note.includes("PM")) return "PM_HALF";
-        return "HALF";
-    }
+
     function updateSheet() {
         const data = JSON.parse(localStorage.getItem('attendance_data')) || {};
         const selectedMonth = document.getElementById('month-picker').value;
         const staffName = localStorage.getItem('my_staff_name') || "";
         document.getElementById('p-name').innerText = staffName;
+        
         const today = new Date();
         document.getElementById('top-y').value = today.getFullYear();
         document.getElementById('top-m').value = today.getMonth() + 1;
         document.getElementById('top-d').value = today.getDate();
-        let leaveDates = Object.keys(data).filter(date => date.startsWith(selectedMonth) && (data[date].note.includes("有給") || data[date].note.includes("半休"))).sort();
+
+        let leaveDates = Object.keys(data).filter(date => 
+            date.startsWith(selectedMonth) && 
+            (data[date].note.includes("有給") || data[date].note.includes("半休"))
+        ).sort();
+        
         const groupSelect = document.getElementById('group-select');
         groupSelect.innerHTML = '';
         currentGroups = [];
+        
         if (leaveDates.length > 0) {
             let tempGroup = [leaveDates[0]];
             for (let i = 1; i < leaveDates.length; i++) {
-                let prevDateStr = leaveDates[i-1], currDateStr = leaveDates[i];
-                let diff = (new Date(currDateStr) - new Date(prevDateStr)) / (1000 * 60 * 60 * 24);
-                let isConnected = false;
+                let prevStr = leaveDates[i-1], currStr = leaveDates[i];
+                let prevData = data[prevStr], currData = data[currStr];
                 
-                if (diff === 1) {
-                    let prevType = getSubtype(data[prevDateStr]), currType = getSubtype(data[currDateStr]);
-                    // 仕事を挟まないパターンのみ接続
-                    if (prevType === "FULL" && currType === "FULL") isConnected = true;
-                    else if (prevType === "FULL" && currType === "AM_HALF") isConnected = true;
-                    else if (prevType === "PM_HALF" && currType === "FULL") isConnected = true;
-                    else if (prevType === "PM_HALF" && currType === "AM_HALF") isConnected = true;
+                let diff = (new Date(currStr) - new Date(prevStr)) / (1000 * 60 * 60 * 24);
+                
+                // 【ロジック維持】有給(1日)同士かつ連続のみグループ化
+                let isBothFull = !prevData.note.includes("半休") && !currData.note.includes("半休");
+                
+                if (diff === 1 && isBothFull) {
+                    tempGroup.push(currStr);
+                } else {
+                    currentGroups.push([...tempGroup]);
+                    tempGroup = [currStr];
                 }
-                
-                if (isConnected) { tempGroup.push(currDateStr); } 
-                else { currentGroups.push([...tempGroup]); tempGroup = [currDateStr]; }
             }
             currentGroups.push([...tempGroup]);
+
             currentGroups.forEach((group, index) => {
                 const opt = document.createElement('option');
                 opt.value = index;
                 const start = group[0].split('-')[2], end = group[group.length - 1].split('-')[2];
-                opt.text = (start === end) ? `${start}日` : `${start}日〜${end}日`;
+                const isHalf = data[group[0]].note.includes("半休");
+                opt.text = (start === end) ? `${start}日(${isHalf?'半休':'有給'})` : `${start}日〜${end}日(有給)`;
                 groupSelect.appendChild(opt);
             });
             renderGroup(0);
         }
     }
+
     function renderGroup(index) {
         if (currentGroups.length === 0) return;
         const group = currentGroups[index], data = JSON.parse(localStorage.getItem('attendance_data')) || {};
         const firstDate = new Date(group[0]), lastDate = new Date(group[group.length - 1]);
+        
         document.getElementById('from-y').innerText = firstDate.getFullYear();
         document.getElementById('from-m').innerText = firstDate.getMonth() + 1;
         document.getElementById('from-d').innerText = firstDate.getDate();
         document.getElementById('to-y').innerText = lastDate.getFullYear();
         document.getElementById('to-m').innerText = lastDate.getMonth() + 1;
         document.getElementById('to-d').innerText = lastDate.getDate();
-        let totalDays = 0, leaveNotes = [];
+
+        const inputArea = document.getElementById('note-input-area');
+        inputArea.innerHTML = '';
+
+        let totalDays = 0;
         group.forEach(date => {
             const dayData = data[date];
+            const dayNum = date.split('-')[2];
             if (dayData.note.includes("半休")) { 
                 totalDays += 0.5; 
-                const sub = getSubtype(dayData);
-                leaveNotes.push(`${date.split('-')[2]}日:${sub === "AM_HALF" ? "AM半休" : "PM半休"}`); 
-            } else { totalDays += 1; }
+                const div = document.createElement('div');
+                div.className = 'half-day-selector';
+                div.innerHTML = `
+                    <span>${dayNum}日:</span>
+                    <select class="ampm-select" data-date="${dayNum}" onchange="updatePrintNote()">
+                        <option value="">--選択--</option>
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                    </select>
+                    <span>半休</span>
+                `;
+                inputArea.appendChild(div);
+            } else { 
+                totalDays += 1; 
+            }
         });
+
+        const extraNote = document.createElement('textarea');
+        extraNote.id = 'extra-note';
+        extraNote.className = 'content-input';
+        extraNote.placeholder = 'その他の備考';
+        extraNote.oninput = updatePrintNote;
+        inputArea.appendChild(extraNote);
+
         document.getElementById('total-days').innerText = totalDays;
         document.getElementById('type-select').value = "有給休暇";
         drawCircle("有給休暇");
         document.getElementById('p-reason').value = "私用の為";
-        document.getElementById('p-note').value = leaveNotes.join('、');
         syncPrintText('p-reason', 'p-reason-print');
-        syncPrintText('p-note', 'p-note-print');
+        
+        updatePrintNote();
     }
+
     window.onload = function() {
         const now = new Date();
         document.getElementById('month-picker').value = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;

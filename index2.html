@@ -5,7 +5,7 @@
     <title>スタッフ勤怠実績管理表</title>
     <link rel="icon" href="logo.png" type="image/png">
     <style>
-        /* --- スタイルは一切変更なし --- */
+        /* --- 基本スタイル --- */
         body { font-family: "Segoe UI", Roboto, sans-serif; padding: 20px; background: #f0f4f8; color: #222; }
         .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
         .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; border-bottom: 3px solid #0056b3; padding-bottom: 15px; gap: 20px; }
@@ -16,27 +16,66 @@
         .input-item { flex: 1; min-width: 180px; }
         label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.9rem; color: #2d3748; }
         input, select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; box-sizing: border-box; color: #222; }
-        .btn-group { display: flex; gap: 12px; margin-bottom: 25px; }
+        
+        .btn-group { display: flex; gap: 12px; margin-bottom: 25px; } 
         button { flex: 1; padding: 15px; font-size: 1.1rem; border: none; border-radius: 12px; cursor: pointer; color: white; font-weight: 800; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .btn-in { background: #27ae60; }
         .btn-out { background: #e74c3c; }
         .btn-absent { background: #8e44ad; }
         .btn-print { background: #2c3e50; width: 100%; margin-top: 15px; }
-        .btn-leave { background: #8e44ad; width: 100%; margin-top: 10px; } /* 休暇届用ボタン */
+        .btn-leave { background: #8e44ad; width: 100%; margin-top: 10px; }
         .btn-del { background: #f39c12; color: #fff; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; }
-        th, td { border: 1px solid #cbd5e0; padding: 12px 4px; text-align: center; font-size: 0.95rem; color: #222; }
-        th { background: #edf2f7; font-weight: 800; }
+        th, td { border: 1px solid #cbd5e0; padding: 0; text-align: center; font-size: 0.95rem; color: #222; height: 48px; }
+        th { background: #edf2f7; font-weight: 800; padding: 8px 4px; }
+
+        /* セル内をグリッドで分割：左5px + 残り全部 + 右5px(バランス用) */
+        .time-cell-inner {
+            display: grid;
+            grid-template-columns: 5px 1fr 5px; 
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* 2pxの極小黒丸：印刷時のみ見える */
+        .dot {
+            display: none;
+            width: 2px;
+            height: 2px;
+            background-color: black;
+            border-radius: 50%;
+            grid-column: 1;
+            justify-self: center;
+        }
+        
+        .time-val {
+            grid-column: 2;
+            text-align: center;
+            line-height: 1;
+        }
+
         .sat-row td:not(.del-col) { background-color: #eef6ff !important; }
         .sun-row td:not(.del-col), .holiday-row td:not(.del-col) { background-color: #fff0f0 !important; }
         .alert-missing-in { background-color: #feb2b2 !important; border: 2px solid #e53e3e; }
         .alert-missing-out { background-color: #faf089 !important; }
+        
+        @keyframes highlight-flash {
+            0% { background-color: #fff59d !important; transform: scale(1.02); box-shadow: 0 0 20px rgba(255, 235, 59, 0.8); }
+            100% { background-color: transparent; transform: scale(1); box-shadow: none; }
+        }
+        .row-highlight { animation: highlight-flash 1.2s ease-out; z-index: 10; position: relative; }
+
         .note-wrapper { position: relative; width: 92%; margin: auto; }
         .note-select { width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 10px; background: #fff; font-size: 0.9rem; font-weight: 600; cursor: pointer; appearance: none; text-align: center; color: #222; }
         .note-wrapper::after { content: "▼"; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.7rem; color: #0056b3; pointer-events: none; }
-        .summary-table { margin-top: 25px; border: 1px solid #000; width: 100%; border-collapse: collapse; }
-        .summary-table th { background: #343a40; color: white; padding: 8px; border: 1px solid #000; }
-        .summary-table td { border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background: #fff; }
+        
+        .summary-table { margin-top: 25px; border: 1px solid #000; width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .summary-table th { background: #343a40; color: white; padding: 8px 2px; border: 1px solid #000; font-size: 0.85rem; }
+        .summary-table td { border: 1px solid #000; padding: 8px 2px; text-align: center; font-weight: bold; background: #fff; font-size: 0.95rem; }
+        
         .print-note-text, .print-footer-note, .stamp-col, .print-header-info { display: none; }
 
         @media print {
@@ -45,16 +84,23 @@
             .container { box-shadow: none; padding: 0; width: 190mm; margin: 0 auto; }
             .header-top, .setup-area, .btn-group, .btn-print, .btn-leave, .del-col, .note-wrapper::after { display: none !important; }
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; border-color: #000 !important; }
-            .print-header-info { display: flex !important; justify-content: space-between; width: 100%; margin-bottom: 5px; border-bottom: 2px solid #000; padding-bottom: 5px; }
+            
+            .print-header-info { display: flex !important; justify-content: space-between; width: 100%; margin-bottom: 5px; border-bottom: 2px solid #000; padding-bottom: 5px; align-items: flex-end; }
             .p-header-right { text-align: right; }
             .p-name-box { border-bottom: 1.5px solid #000; display: inline-block; width: 180px; text-align: right; font-weight: bold; font-size: 1.2rem; }
+            
             table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-            th, td { border: 1px solid #000 !important; font-size: 0.8rem; height: 23.8px; padding: 0 !important; color: #000 !important; line-height: 23.8px; }
+            th, td { border: 1px solid #000 !important; font-size: 0.8rem; height: 23.8px !important; padding: 0 !important; color: #000 !important; }
+            
+            .dot { display: block !important; }
+            .dot-hidden { display: none !important; } 
+            .time-val { font-size: 0.85rem !important; }
+
             .stamp-col { display: table-cell !important; width: 50px; }
             .note-select { display: none !important; }
             .print-note-text { display: block !important; text-align: center; }
             .summary-table { margin-top: 6px; }
-            .summary-table th { background: #f2f2f2 !important; color: #000 !important; font-size: 0.8rem; height: 24px; line-height: 24px; }
+            .summary-table th { background: #f2f2f2 !important; color: #000 !important; font-size: 0.75rem; height: 24px; line-height: 24px; }
             .summary-table td { background: #fff !important; color: #000 !important; font-size: 0.8rem; height: 24px; line-height: 24px; }
             .print-footer-note { display: block !important; margin-top: 6px; width: 100%; height: 50px; border: 1px solid #000 !important; padding: 5px; box-sizing: border-box; font-size: 0.8rem; color: #000 !important; }
         }
@@ -115,6 +161,7 @@
             <th>出勤日数</th><td id="total-days">0</td>
             <th>欠勤</th><td id="total-absent">0</td>
             <th>遅刻</th><td id="total-late">0</td>
+            <th>有給使用</th><td id="total-paid-leave">0</td>
             <th>総実労働</th><td id="total-work-h">0.00</td>
             <th>総残業</th><td id="total-over-h">0.00</td>
         </tr>
@@ -155,11 +202,34 @@
         const now = new Date();
         let h = now.getHours(), m = now.getMinutes();
         if (!data[date]) data[date] = { in: "", out: "", break: breakMin, absent: false, note: "" };
-        if (type === 'in') { if (h < 9) { h = 9; m = 0; } data[date].in = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0'); data[date].absent = false; }
-        else if (type === 'out') { data[date].out = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0'); data[date].absent = false; }
-        else if (type === 'absent') { data[date].in = ""; data[date].out = ""; data[date].absent = true; data[date].note = "欠勤"; }
+        
+        if (type === 'in') { 
+            if (h < 9) { h = 9; m = 0; } 
+            data[date].in = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0'); 
+            data[date].editedIn = false; 
+            data[date].absent = false; 
+        }
+        else if (type === 'out') { 
+            data[date].out = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0'); 
+            data[date].editedOut = false; 
+            data[date].absent = false; 
+        }
+        else if (type === 'absent') { 
+            data[date].in = ""; data[date].out = ""; data[date].absent = true; data[date].note = "欠勤"; 
+        }
         localStorage.setItem('attendance_data', JSON.stringify(data));
         displayLogs();
+        highlightRow(date);
+    }
+
+    function highlightRow(dateStr) {
+        const rowId = "row-" + dateStr;
+        const row = document.getElementById(rowId);
+        if (row) {
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            row.classList.add('row-highlight');
+            setTimeout(() => { row.classList.remove('row-highlight'); }, 1200);
+        }
     }
 
     function formatTimeInput(val) {
@@ -185,8 +255,11 @@
         let newVal = prompt(`${field}を入力してください`, data[date][field] || "");
         if (newVal !== null) {
             data[date][field] = (field === 'break') ? newVal : formatTimeInput(newVal);
+            if (field === 'in') data[date].editedIn = true;
+            if (field === 'out') data[date].editedOut = true;
             localStorage.setItem('attendance_data', JSON.stringify(data));
             displayLogs();
+            highlightRow(date);
         }
     }
 
@@ -212,8 +285,7 @@
 
     function parseToMin(str) {
         if(!str) return null;
-        let clean = formatTimeInput(str);
-        const parts = clean.split(':');
+        const parts = str.split(':');
         return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
     }
 
@@ -221,6 +293,23 @@
         const day = d.getDay();
         const diff = d.getDate() - day + (day === 0 ? -6 : 1);
         return new Date(d.setDate(diff));
+    }
+
+    function createTimeCell(val, isManual, date, field) {
+        const div = document.createElement("div");
+        div.className = "time-cell-inner";
+        div.onclick = () => editValue(date, field);
+
+        const dot = document.createElement("span");
+        dot.className = isManual ? "dot" : "dot dot-hidden";
+        
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "time-val";
+        timeSpan.innerText = val || "";
+
+        div.appendChild(dot);
+        div.appendChild(timeSpan);
+        return div;
     }
 
     function displayLogs() {
@@ -231,12 +320,12 @@
         const todayStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
         
         tbody.innerHTML = '';
-        let tDays = 0, tAbsent = 0, tLate = 0, tWork = 0, tOver = 0;
+        let tDays = 0, tAbsent = 0, tLate = 0, tWork = 0, tOver = 0, tPaidLeave = 0;
         let weeklyWorkMinutes = {}; 
 
         if (selectedMonth) {
             const [sYear, sMonth] = selectedMonth.split('-').map(Number);
-            let lastDay = (selectedMonth === todayStr.substring(0, 7)) ? now.getDate() : new Date(sYear, sMonth, 0).getDate();
+            let lastDay = new Date(sYear, sMonth, 0).getDate();
             for (let i = 1; i <= lastDay; i++) {
                 const dStr = `${sYear}-${sMonth.toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
                 if (!data[dStr]) data[dStr] = { in: "", out: "", break: "60", absent: false, note: "" };
@@ -248,7 +337,13 @@
             const d = data[date];
             let rowWork = 0, rowOver = 0, isLate = false, rowClass = "", alertMsg = "";
             const dateObj = new Date(date), isHol = isHoliday(date), dayIdx = dateObj.getDay();
-            if (isHol || dayIdx === 0) rowClass = "sun-row"; else if (dayIdx === 6) rowClass = "sat-row";
+            
+            if (isHol) rowClass = "holiday-row"; 
+            else if (dayIdx === 0) rowClass = "sun-row"; 
+            else if (dayIdx === 6) rowClass = "sat-row";
+
+            if (d.note === "有給") tPaidLeave += 1.0;
+            else if (d.note === "半休") tPaidLeave += 0.5;
 
             const mon = getMonday(new Date(date));
             const weekKey = mon.toISOString().split('T')[0];
@@ -256,13 +351,9 @@
 
             if (!d.absent && d.in && d.out) {
                 const inMin = parseToMin(d.in), outMin = parseToMin(d.out), brMin = parseInt(d.break) || 0;
-                
-                // ★修正箇所はここだけ★
-                // inMin > 540（9時以降）かつ、備考に「有給」も「半休」も含まれていない時だけ遅刻にする
                 if (inMin > 540 && !(d.note || "").includes("有給") && !(d.note || "").includes("半休")) {
                     isLate = true;
                 }
-
                 let rawWorkMin = outMin - inMin - brMin;
                 if (rawWorkMin > 0) {
                     let dayWorkH = Math.floor(rawWorkMin / 15) * 0.25;
@@ -277,30 +368,34 @@
                     weeklyWorkMinutes[weekKey] += rawWorkMin;
                 }
             }
+
             if (!d.absent) {
                 if (!d.in && date === todayStr) { rowClass += " alert-missing-in"; alertMsg = "【未】"; } 
                 else if (d.in && !d.out && date < todayStr) { rowClass += " alert-missing-out"; alertMsg = "【未】"; }
             }
 
             const row = tbody.insertRow();
+            row.id = "row-" + date;
             if (rowClass.trim()) row.className = rowClass.trim();
             row.insertCell(0).innerText = `${date.replace(/-/g, '/')} (${weekDays[dayIdx]})`;
-            const cIn = row.insertCell(1); cIn.innerText = d.in || ""; cIn.onclick = () => editValue(date, 'in');
-            const cOut = row.insertCell(2); cOut.innerText = d.out || ""; cOut.onclick = () => editValue(date, 'out');
+            
+            row.insertCell(1).appendChild(createTimeCell(d.in, d.editedIn, date, 'in'));
+            row.insertCell(2).appendChild(createTimeCell(d.out, d.editedOut, date, 'out'));
+
             const cBr = row.insertCell(3); cBr.innerText = (!d.in && !d.out) ? "" : (d.break || ""); cBr.onclick = () => editValue(date, 'break');
             row.insertCell(4).innerText = (!d.in || !d.out) ? "" : rowWork.toFixed(2);
             row.insertCell(5).innerText = (!d.in || !d.out) ? "" : rowOver.toFixed(2);
             
             const cNote = row.insertCell(6);
+            cNote.style.padding = "4px";
             let rawNote = (d.note || "").replace("【未】", "").trim();
             if (isLate) rawNote = "遅刻 " + rawNote;
             const fullNote = (alertMsg + " " + rawNote).trim();
-
             const wrapper = document.createElement("div"); wrapper.className = "note-wrapper";
             const select = document.createElement("select"); select.className = "note-select";
             select.onchange = (e) => handleNoteChange(date, e.target.value);
-            [{v:"none",t:"--"}, {v:"有給",t:"有給"}, {v:"半休",t:"半休"}, {v:"残務処理",t:"残務処理"}, {v:"custom",t:"自由入力"}]
-            .forEach(opt => {
+            const options = [{v:"none",t:"--"}, {v:"有給",t:"有給"}, {v:"半休",t:"半休"}, {v:"残務処理",t:"残務処理"}, {v:"custom",t:"自由入力"}];
+            options.forEach(opt => {
                 const o = document.createElement("option"); o.value = opt.v; o.text = opt.t;
                 if (fullNote === opt.v) o.selected = true; select.appendChild(o);
             });
@@ -309,7 +404,8 @@
                 select.insertBefore(co, select.lastChild);
             }
             wrapper.appendChild(select);
-            const pText = document.createElement("span"); pText.className = "print-note-text"; pText.innerText = (isHol && !d.note) ? "" : fullNote;
+            const pText = document.createElement("span"); pText.className = "print-note-text"; 
+            pText.innerText = (isHol && !d.note) ? "" : fullNote;
             cNote.appendChild(wrapper); cNote.appendChild(pText);
 
             row.insertCell(7).className = "stamp-col";
@@ -324,6 +420,7 @@
         document.getElementById('total-days').innerText = tDays;
         document.getElementById('total-absent').innerText = tAbsent;
         document.getElementById('total-late').innerText = tLate;
+        document.getElementById('total-paid-leave').innerText = tPaidLeave.toFixed(1);
         document.getElementById('total-work-h').innerText = tWork.toFixed(2);
         document.getElementById('total-over-h').innerText = tOver.toFixed(2);
     }
