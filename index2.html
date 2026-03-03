@@ -5,42 +5,17 @@
     <title>スタッフ勤怠実績管理表</title>
     <link rel="icon" href="logo.png" type="image/png">
     <style>
-        /* --- 画面表示用スタイル（変更なし） --- */
-        body { 
-            font-family: "Segoe UI", Roboto, sans-serif; 
-            padding: 20px; 
-            background-image: url('打刻.png');
-            background-size: cover; 
-            background-repeat: no-repeat;
-            background-position: center center; 
-            background-attachment: fixed; 
-            background-color: #fff;
-            color: #222; 
-            margin: 0;
-        }
-
-        .container { 
-            max-width: 1000px; 
-            margin: 40px auto; 
-            background: rgba(255, 255, 255, 0.92); 
-            padding: 30px; 
-            border-radius: 16px; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15); 
-            backdrop-filter: blur(2px);
-            position: relative;
-            z-index: 1;
-        }
-
+        /* スタイルは維持 */
+        body { font-family: "Segoe UI", Roboto, sans-serif; padding: 20px; background-image: url('打刻.png'); background-size: cover; background-repeat: no-repeat; background-position: center center; background-attachment: fixed; background-color: #fff; color: #222; margin: 0; }
+        .container { max-width: 1000px; margin: 40px auto; background: rgba(255, 255, 255, 0.92); padding: 30px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); backdrop-filter: blur(2px); position: relative; z-index: 1; }
         .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; border-bottom: 3px solid #0056b3; padding-bottom: 15px; gap: 20px; }
         .logo-area img { height: 45px; width: auto; }
         h1 { font-size: 1.6rem; margin: 0; color: #004494; font-weight: 800; }
         .month-selector { padding: 10px 16px; font-size: 1rem; border: 2px solid #0056b3; border-radius: 10px; cursor: pointer; background: #fff; font-weight: bold; color: #0056b3; }
-        
         .setup-area { margin-bottom: 25px; background: rgba(248, 250, 252, 0.85); padding: 20px; border-radius: 12px; display: flex; gap: 20px; flex-wrap: wrap; border: 1px solid #cbd5e0; }
         .input-item { flex: 1; min-width: 180px; }
         label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.9rem; color: #2d3748; }
         input, select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; box-sizing: border-box; color: #222; }
-        
         .btn-group { display: flex; gap: 12px; margin-bottom: 25px; } 
         button { flex: 1; padding: 15px; font-size: 1.1rem; border: none; border-radius: 12px; cursor: pointer; color: white; font-weight: 800; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .btn-in { background: #27ae60; }
@@ -49,88 +24,40 @@
         .btn-print { background: #2c3e50; width: 100%; margin-top: 15px; }
         .btn-leave { background: #8e44ad; width: 100%; margin-top: 10px; }
         .btn-del { background: #f39c12; color: #fff; padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; }
-        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; background: rgba(255, 255, 255, 0.7); }
         th, td { border: 1px solid #cbd5e0; padding: 0; text-align: center; font-size: 0.95rem; color: #222; height: 48px; }
         th { background: rgba(237, 242, 247, 0.9); font-weight: 800; padding: 8px 4px; }
-
         .time-cell-inner { display: grid; grid-template-columns: 5px 1fr 5px; align-items: center; height: 100%; width: 100%; cursor: pointer; }
         .dot { display: none; width: 2px; height: 2px; background-color: black; border-radius: 50%; grid-column: 1; justify-self: center; }
         .time-val { grid-column: 2; text-align: center; line-height: 1; }
-
         .sat-row td:not(.del-col) { background-color: rgba(238, 246, 255, 0.8) !important; }
         .sun-row td:not(.del-col), .holiday-row td:not(.del-col) { background-color: rgba(255, 240, 240, 0.8) !important; }
-        
-        @keyframes highlight-flash {
-            0% { background-color: #fff59d !important; transform: scale(1.01); box-shadow: 0 0 20px rgba(255, 235, 59, 0.8); }
-            100% { background-color: transparent; transform: scale(1); box-shadow: none; }
-        }
-        .row-highlight { animation: highlight-flash 1.2s ease-out; z-index: 10; position: relative; }
-
         .note-wrapper { position: relative; width: 92%; margin: auto; }
         .note-select { width: 100%; padding: 8px; border: 2px solid #cbd5e0; border-radius: 10px; background: #fff; font-size: 0.9rem; font-weight: 600; cursor: pointer; appearance: none; text-align: center; color: #222; }
-        .note-wrapper::after { content: "▼"; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.7rem; color: #0056b3; pointer-events: none; }
-        
         .summary-table { margin-top: 25px; border: 1px solid #000; width: 100%; border-collapse: collapse; table-layout: fixed; background: #fff; }
-        .summary-table th { background: #343a40; color: white; padding: 8px 2px; border: 1px solid #000; font-size: 0.85rem; }
-        .summary-table td { border: 1px solid #000; padding: 8px 2px; text-align: center; font-weight: bold; background: #fff; font-size: 0.95rem; }
-        
+        .summary-table th { background: #343a40; color: white; padding: 6px 2px; border: 1px solid #000; font-size: 0.85rem; }
+        .summary-table td { border: 1px solid #000; padding: 6px 2px; text-align: center; font-weight: bold; background: #fff; font-size: 0.95rem; }
         .print-note-text, .print-footer-note, .stamp-col, .print-header-info { display: none; }
 
-        /* --- 【今回の修正：印刷時の備考欄と管理者印の幅】 --- */
         @media print {
             @page { size: A4 portrait; margin: 5mm 8mm; } 
             body { background: white !important; background-image: none !important; padding: 0 !important; margin: 0 !important; width: 100%; overflow: visible !important; }
-            
-            .container { 
-                box-shadow: none !important; 
-                padding: 0 !important; 
-                margin: 0 auto !important; 
-                width: 100% !important; 
-                max-width: none !important; 
-                background: white !important; 
-            }
-            
+            .container { box-shadow: none !important; padding: 0 !important; margin: 0 auto !important; width: 100% !important; max-width: none !important; background: white !important; }
             .header-top, .setup-area, .btn-group, .btn-print, .btn-leave, .del-col, .note-wrapper::after { display: none !important; }
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            
-            .print-header-info { 
-                display: flex !important; 
-                justify-content: space-between; 
-                width: 100%; 
-                margin-bottom: 25px !important; 
-                border-bottom: 2.5px solid #000; 
-                padding-bottom: 12px; 
-                align-items: flex-end; 
-            }
-            .p-header-left div { margin-bottom: 5px; }
-            .p-header-right { text-align: right; }
-            .p-name-box { 
-                border-bottom: 1.5px solid #000; 
-                display: inline-block; 
-                width: 220px; 
-                text-align: right; 
-                font-weight: bold; 
-                font-size: 1.25rem; 
-                padding-right: 5px;
-            }
-            
-            table { width: 100% !important; border-collapse: collapse; margin-top: 5px; table-layout: fixed !important; }
-            th, td { border: 1px solid #000 !important; font-size: 0.75rem !important; height: 23.2px !important; color: #000 !important; padding: 0 !important; line-height: 23.2px !important; }
-            
-            th:nth-child(1) { width: 17% !important; } 
+            .print-header-info { display: flex !important; justify-content: space-between; width: 100%; margin-bottom: 12px !important; border-bottom: 2.5px solid #000; padding-bottom: 8px; align-items: flex-end; }
+            .p-name-box { border-bottom: 1.5px solid #000; display: inline-block; width: 220px; text-align: right; font-weight: bold; font-size: 1.25rem; padding-right: 5px; }
+            table { width: 100% !important; border-collapse: collapse; margin-top: 2px; table-layout: fixed !important; }
+            th, td { border: 1px solid #000 !important; font-size: 0.72rem !important; height: 21px !important; color: #000 !important; padding: 0 !important; line-height: 21px !important; }
             .dot { display: block !important; }
             .dot-hidden { display: none !important; } 
-            
-            /* 管理者印の幅を「管理者印」が1行で入る広さに固定(約65px)し、その分備考欄を調整 */
-            .stamp-col { display: table-cell !important; width: 65px !important; }
+            .stamp-col { display: table-cell !important; width: 60px !important; }
             .note-select { display: none !important; }
             .print-note-text { display: block !important; }
-            
-            .summary-table { margin-top: 6px; width: 100% !important; }
-            .summary-table th { background: #f2f2f2 !important; color: #000 !important; font-size: 0.75rem !important; height: 22px !important; line-height: 22px !important; }
-            .summary-table td { background: #fff !important; color: #000 !important; font-size: 0.8rem !important; height: 22px !important; line-height: 22px !important; }
-            .print-footer-note { display: block !important; margin-top: 6px; width: 100%; height: 45px; border: 1px solid #000 !important; padding: 5px; box-sizing: border-box; font-size: 0.8rem; }
+            .summary-table { margin-top: 5px; width: 100% !important; }
+            .summary-table th { background: #f2f2f2 !important; color: #000 !important; font-size: 0.72rem !important; height: 19px !important; }
+            .summary-table td { background: #fff !important; color: #000 !important; font-size: 0.78rem !important; height: 19px !important; }
+            .print-footer-note { display: block !important; margin-top: 5px; width: 100%; height: 70px; border: 1px solid #000 !important; padding: 5px; box-sizing: border-box; font-size: 0.8rem; text-align: left; }
         }
     </style>
 </head>
@@ -186,25 +113,41 @@
 
     <table class="summary-table">
         <tr>
-            <th>出勤日数</th><td id="total-days">0</td>
+            <th style="width:16.6%">出勤日数</th><td style="width:16.6%" id="total-days">0</td>
+            <th style="width:16.6%">総実労働</th><td style="width:16.6%" id="total-work-h">0.00</td>
+            <th style="width:16.6%">総残業</th><td style="width:16.6%" id="total-over-h">0.00</td>
+        </tr>
+        <tr>
             <th>欠勤</th><td id="total-absent">0</td>
-            <th>遅刻</th><td id="total-late">0</td>
+            <th>遅刻回数</th><td id="total-late">0</td>
+            <th>早退回数</th><td id="total-early">0</td>
+        </tr>
+        <tr>
             <th>有給使用</th><td id="total-paid-leave">0</td>
-            <th>総実労働</th><td id="total-work-h">0.00</td>
-            <th>総残業</th><td id="total-over-h">0.00</td>
+            <td colspan="4" style="background:#f9f9f9; border:1px solid #000;"></td>
         </tr>
     </table>
 
-    <div class="print-footer-note">【備考】</div>
+    <div class="print-footer-note" id="print-footer-note">【備考】</div>
     <button class="btn-print" onclick="preparePrint()">印刷プレビューを表示</button>
     <button class="btn-leave" onclick="location.href='leave.html'">休暇届を作成する</button>
 </div>
 
 <script>
+    let totalLateMinutes = 0;
+    let totalEarlyMinutes = 0;
     const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+
     function isHoliday(dateStr) {
         const holidays = ["2026-01-01", "2026-01-12", "2026-02-11", "2026-02-23", "2026-03-20", "2026-04-29", "2026-05-03", "2026-05-04", "2026-05-05", "2026-05-06", "2026-07-20", "2026-08-11", "2026-09-21", "2026-09-22", "2026-09-23", "2026-10-12", "2026-11-03", "2026-11-23"];
         return holidays.includes(dateStr);
+    }
+
+    // 平日なら入力値、土日祝なら0を返す
+    function getDefaultBreak(dateStr) {
+        const d = new Date(dateStr);
+        if (d.getDay() === 0 || d.getDay() === 6 || isHoliday(dateStr)) return "0";
+        return document.getElementById('break-minutes').value;
     }
 
     window.onload = function() {
@@ -225,75 +168,75 @@
 
     function record(type) {
         const date = document.getElementById('work-date').value;
-        const breakMin = document.getElementById('break-minutes').value;
         let data = JSON.parse(localStorage.getItem('attendance_data')) || {};
+        if (!data[date]) data[date] = { in: "", out: "", break: getDefaultBreak(date), absent: false, note: "" };
+        
         const now = new Date();
         let h = now.getHours(), m = now.getMinutes();
-        if (!data[date]) data[date] = { in: "", out: "", break: breakMin, absent: false, note: "" };
-        
+
         if (type === 'in') { 
             if (h < 9) { h = 9; m = 0; } 
+            else { m = Math.floor(m / 15) * 15; }
             data[date].in = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0'); 
-            data[date].editedIn = false; 
-            data[date].absent = false; 
+            data[date].editedIn = false; data[date].absent = false; 
         }
         else if (type === 'out') { 
-            data[date].out = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0'); 
-            data[date].editedOut = false; 
-            data[date].absent = false; 
+            const roundedM = Math.floor(m / 15) * 15;
+            data[date].out = h.toString().padStart(2, '0') + ":" + roundedM.toString().padStart(2, '0'); 
+            data[date].editedOut = false; data[date].absent = false; 
         }
         else if (type === 'absent') { 
             data[date].in = ""; data[date].out = ""; data[date].absent = true; data[date].note = "欠勤"; 
         }
         localStorage.setItem('attendance_data', JSON.stringify(data));
         displayLogs();
-        highlightRow(date);
     }
 
-    function highlightRow(dateStr) {
-        const rowId = "row-" + dateStr;
-        const row = document.getElementById(rowId);
-        if (row) {
-            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            row.classList.add('row-highlight');
-            setTimeout(() => { row.classList.remove('row-highlight'); }, 1200);
-        }
+    function parseToMin(str) {
+        if(!str) return null;
+        const parts = str.split(':');
+        return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
     }
 
-    function formatTimeInput(val) {
+    function formatTimeInput(val, fieldType) {
         if (!val) return "";
-        let clean = val.replace(/[！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-                       .replace(/[；;]/g, ':').replace(/[時分]/g, ':').replace(/[^0-9:]/g, '');
-        let hh = "00", mm = "00";
-        if (clean.includes(':')) {
-            let parts = clean.split(':');
-            hh = parts[0].padStart(2, '0');
-            mm = (parts[1] || "00").padEnd(2, '0').substring(0, 2);
-        } else {
-            if (clean.length <= 2) { hh = clean.padStart(2, '0'); mm = "00"; }
-            else if (clean.length === 3) { hh = clean.substring(0, 1).padStart(2, '0'); mm = clean.substring(1); }
-            else if (clean.length >= 4) { hh = clean.substring(0, 2); mm = clean.substring(2, 4); }
+        let clean = val.replace(/[！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[；;]/g, ':').replace(/[時分]/g, ':').replace(/[^0-9:]/g, '');
+        let hh = 0, mm = 0;
+        if (clean.includes(':')) { let parts = clean.split(':'); hh = parseInt(parts[0]) || 0; mm = parseInt(parts[1]) || 0; }
+        else {
+            if (clean.length <= 2) { hh = parseInt(clean) || 0; mm = 0; }
+            else if (clean.length === 3) { hh = parseInt(clean.substring(0, 1)) || 0; mm = parseInt(clean.substring(1)) || 0; }
+            else if (clean.length >= 4) { hh = parseInt(clean.substring(0, 2)) || 0; mm = parseInt(clean.substring(2, 4)) || 0; }
         }
-        return `${hh}:${mm}`;
+        if (fieldType === 'in') {
+            if (mm > 0 && mm <= 15) mm = 15; else if (mm > 15 && mm <= 30) mm = 30; else if (mm > 30 && mm <= 45) mm = 45; else if (mm > 45) { mm = 0; hh += 1; }
+        } else if (fieldType === 'out') {
+            mm = Math.floor(mm / 15) * 15;
+        }
+        return hh.toString().padStart(2, '0') + ":" + mm.toString().padStart(2, '0');
     }
 
     function editValue(date, field) {
         let data = JSON.parse(localStorage.getItem('attendance_data')) || {};
-        if (!data[date]) data[date] = { in: "", out: "", break: "60", absent: false, note: "" };
-        let newVal = prompt(`${field}を入力してください`, data[date][field] || "");
+        if (!data[date]) data[date] = { in: "", out: "", break: getDefaultBreak(date), absent: false, note: "" };
+        let newVal = prompt(`${field === 'break' ? '休憩時間(分)' : field}を入力`, data[date][field] || "");
         if (newVal !== null) {
-            data[date][field] = (field === 'break') ? newVal : formatTimeInput(newVal);
-            if (field === 'in') data[date].editedIn = true;
-            if (field === 'out') data[date].editedOut = true;
+            if (field === 'over') {
+                data[date].editedOver = newVal;
+            } else if (field === 'break') {
+                data[date].break = newVal; // 休憩時間の修正を反映
+            } else {
+                data[date][field] = formatTimeInput(newVal, field);
+                if (field === 'in') data[date].editedIn = true;
+                if (field === 'out') data[date].editedOut = true;
+            }
             localStorage.setItem('attendance_data', JSON.stringify(data));
             displayLogs();
-            highlightRow(date);
         }
     }
 
     function handleNoteChange(date, val) {
         let data = JSON.parse(localStorage.getItem('attendance_data')) || {};
-        if (!data[date]) data[date] = { in: "", out: "", break: "60", absent: false, note: "" };
         if (val === "custom") {
             let freeVal = prompt("備考を入力", data[date].note || "");
             if (freeVal !== null) data[date].note = freeVal;
@@ -304,39 +247,6 @@
         displayLogs();
     }
 
-    function deleteDay(date) {
-        if(confirm(date + "を削除？")) {
-            let data = JSON.parse(localStorage.getItem('attendance_data')) || {};
-            delete data[date]; localStorage.setItem('attendance_data', JSON.stringify(data)); displayLogs();
-        }
-    }
-
-    function parseToMin(str) {
-        if(!str) return null;
-        const parts = str.split(':');
-        return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
-    }
-
-    function getMonday(d) {
-        const day = d.getDay();
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-        return new Date(d.setDate(diff));
-    }
-
-    function createTimeCell(val, isManual, date, field) {
-        const div = document.createElement("div");
-        div.className = "time-cell-inner";
-        div.onclick = () => editValue(date, field);
-        const dot = document.createElement("span");
-        dot.className = isManual ? "dot" : "dot dot-hidden";
-        const timeSpan = document.createElement("span");
-        timeSpan.className = "time-val";
-        timeSpan.innerText = val || "";
-        div.appendChild(dot);
-        div.appendChild(timeSpan);
-        return div;
-    }
-
     function displayLogs() {
         let data = JSON.parse(localStorage.getItem('attendance_data')) || {};
         const tbody = document.getElementById('log-body');
@@ -345,106 +255,118 @@
         const todayStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
         
         tbody.innerHTML = '';
-        let tDays = 0, tAbsent = 0, tLate = 0, tWork = 0, tOver = 0, tPaidLeave = 0;
-        let weeklyWorkMinutes = {}; 
+        let tDays = 0, tAbsent = 0, tLate = 0, tEarly = 0, tWork = 0, tOver = 0, tPaidLeave = 0;
+        totalLateMinutes = 0;
+        totalEarlyMinutes = 0;
 
         if (selectedMonth) {
             const [sYear, sMonth] = selectedMonth.split('-').map(Number);
             let lastDay = new Date(sYear, sMonth, 0).getDate();
             for (let i = 1; i <= lastDay; i++) {
                 const dStr = `${sYear}-${sMonth.toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
-                if (!data[dStr]) data[dStr] = { in: "", out: "", break: "60", absent: false, note: "" };
+                if (!data[dStr]) data[dStr] = { in: "", out: "", break: getDefaultBreak(dStr), absent: false, note: "" };
             }
         }
 
         Object.keys(data).sort().forEach(date => {
             if (date.substring(0, 7) !== selectedMonth) return;
             const d = data[date];
-            let rowWork = 0, rowOver = 0, isLate = false, rowClass = "", alertMsg = "";
+            let rowWork = 0, rowOver = 0, isLate = false, isEarly = false, rowClass = "", alertMsg = "";
             const dateObj = new Date(date), isHol = isHoliday(date), dayIdx = dateObj.getDay();
             
-            if (isHol) rowClass = "holiday-row"; 
-            else if (dayIdx === 0) rowClass = "sun-row"; 
-            else if (dayIdx === 6) rowClass = "sat-row";
-
-            if (d.note === "有給") tPaidLeave += 1.0;
-            else if (d.note === "半休") tPaidLeave += 0.5;
-
-            const mon = getMonday(new Date(date));
-            const weekKey = mon.toISOString().split('T')[0];
-            if (!weeklyWorkMinutes[weekKey]) weeklyWorkMinutes[weekKey] = 0;
+            if (isHol) rowClass = "holiday-row"; else if (dayIdx === 0) rowClass = "sun-row"; else if (dayIdx === 6) rowClass = "sat-row";
 
             if (!d.absent && d.in && d.out) {
                 const inMin = parseToMin(d.in), outMin = parseToMin(d.out), brMin = parseInt(d.break) || 0;
-                if (inMin > 540 && !(d.note || "").includes("有給") && !(d.note || "").includes("半休")) {
-                    isLate = true;
+                if (dayIdx >= 1 && dayIdx <= 5 && !isHol && !d.note.includes("有給") && !d.note.includes("半休")) {
+                    if (inMin > 540) { isLate = true; totalLateMinutes += (inMin - 540); }
+                    if (outMin < 1080) { isEarly = true; totalEarlyMinutes += (1080 - outMin); }
                 }
                 let rawWorkMin = outMin - inMin - brMin;
                 if (rawWorkMin > 0) {
                     let dayWorkH = Math.floor(rawWorkMin / 15) * 0.25;
-                    if (dayIdx >= 1 && dayIdx <= 5 && !isHol) {
-                        rowWork = dayWorkH; if (dayWorkH > 8) rowOver = dayWorkH - 8;
-                    } else {
-                        let curWMin = weeklyWorkMinutes[weekKey];
-                        rowWork = dayWorkH;
-                        if (curWMin >= 2400) rowOver = dayWorkH;
-                        else if (curWMin + rawWorkMin > 2400) rowOver = Math.floor(((curWMin + rawWorkMin) - 2400) / 15) * 0.25;
-                    }
-                    weeklyWorkMinutes[weekKey] += rawWorkMin;
+                    rowWork = dayWorkH;
+                    if (dayIdx === 6 || dayIdx === 0 || isHol) rowOver = dayWorkH;
+                    else if (dayWorkH > 8) rowOver = dayWorkH - 8;
                 }
             }
 
+            if (d.note.includes("有給")) tPaidLeave += 1.0; else if (d.note.includes("半休")) tPaidLeave += 0.5;
+            if (d.editedOver !== undefined && d.editedOver !== "") rowOver = parseFloat(d.editedOver) || 0;
             if (!d.absent) {
-                if (!d.in && date === todayStr) { rowClass += " alert-missing-in"; alertMsg = "【未】"; } 
-                else if (d.in && !d.out && date < todayStr) { rowClass += " alert-missing-out"; alertMsg = "【未】"; }
+                if (!d.in && date === todayStr) alertMsg = "【未】";
+                else if (d.in && !d.out && date < todayStr) alertMsg = "【未】";
             }
 
+            let autoText = "";
+            if (isLate && !d.note.includes("遅刻")) autoText += "遅刻 ";
+            if (isEarly && !d.note.includes("早退")) autoText += "早退 ";
+            let finalNote = (alertMsg + " " + autoText + (d.note || "")).trim();
+
             const row = tbody.insertRow();
-            row.id = "row-" + date;
-            if (rowClass.trim()) row.className = rowClass.trim();
+            if (rowClass) row.className = rowClass;
             row.insertCell(0).innerText = `${date.replace(/-/g, '/')} (${weekDays[dayIdx]})`;
             
-            row.insertCell(1).appendChild(createTimeCell(d.in, d.editedIn, date, 'in'));
-            row.insertCell(2).appendChild(createTimeCell(d.out, d.editedOut, date, 'out'));
+            // 出勤
+            const cIn = row.insertCell(1);
+            const divIn = document.createElement("div"); divIn.className="time-cell-inner"; divIn.onclick=()=>editValue(date,'in');
+            const dotIn = document.createElement("span"); dotIn.className = d.editedIn ? "dot" : "dot dot-hidden";
+            const valIn = document.createElement("span"); valIn.className="time-val"; valIn.innerText=d.in||"";
+            divIn.append(dotIn, valIn); cIn.append(divIn);
 
-            const cBr = row.insertCell(3); cBr.innerText = (!d.in && !d.out) ? "" : (d.break || ""); cBr.onclick = () => editValue(date, 'break');
+            // 退勤
+            const cOut = row.insertCell(2);
+            const divOut = document.createElement("div"); divOut.className="time-cell-inner"; divOut.onclick=()=>editValue(date,'out');
+            const dotOut = document.createElement("span"); dotOut.className = d.editedOut ? "dot" : "dot dot-hidden";
+            const valOut = document.createElement("span"); valOut.className="time-val"; valOut.innerText=d.out||"";
+            divOut.append(dotOut, valOut); cOut.append(divOut);
+
+            // 休憩（修正可能）
+            const cBreak = row.insertCell(3);
+            cBreak.style.cursor = "pointer";
+            cBreak.onclick = () => editValue(date, 'break');
+            cBreak.innerText = (!d.in && !d.out) ? "" : d.break;
+
             row.insertCell(4).innerText = (!d.in || !d.out) ? "" : rowWork.toFixed(2);
             row.insertCell(5).innerText = (!d.in || !d.out) ? "" : rowOver.toFixed(2);
-            
+
             const cNote = row.insertCell(6);
-            cNote.style.padding = "4px";
-            let rawNote = (d.note || "").replace("【未】", "").trim();
-            if (isLate) rawNote = "遅刻 " + rawNote;
-            const fullNote = (alertMsg + " " + rawNote).trim();
             const wrapper = document.createElement("div"); wrapper.className = "note-wrapper";
             const select = document.createElement("select"); select.className = "note-select";
             select.onchange = (e) => handleNoteChange(date, e.target.value);
-            const options = [{v:"none",t:"--"}, {v:"有給",t:"有給"}, {v:"半休",t:"半休"}, {v:"残務処理",t:"残務処理"}, {v:"custom",t:"自由入力"}];
-            options.forEach(opt => {
-                const o = document.createElement("option"); o.value = opt.v; o.text = opt.t;
-                if (fullNote === opt.v) o.selected = true; select.appendChild(o);
+            const baseOptions = ["有給","半休","残務処理"];
+            const oNone = document.createElement("option"); oNone.value="none"; oNone.text="--"; select.add(oNone);
+            baseOptions.forEach(opt => {
+                const o = document.createElement("option"); o.value=opt; o.text=opt;
+                if(d.note === opt) o.selected = true; select.add(o);
             });
-            if (fullNote && !["有給", "半休", "残務処理", ""].includes(fullNote)) {
-                const co = document.createElement("option"); co.value = fullNote; co.text = fullNote; co.selected = true;
-                select.insertBefore(co, select.lastChild);
+            if (finalNote && !baseOptions.includes(d.note) && d.note !== "") {
+                const oCustom = document.createElement("option");
+                oCustom.value = d.note; oCustom.text = finalNote; oCustom.selected = true;
+                select.insertBefore(oCustom, select.lastChild);
+            } else if (autoText || alertMsg) {
+                const oAuto = document.createElement("option");
+                oAuto.value = d.note || "none"; oAuto.text = finalNote; oAuto.selected = true;
+                if (d.note === "") select.add(oAuto); else select.insertBefore(oAuto, select.firstChild);
             }
-            wrapper.appendChild(select);
-            const pText = document.createElement("span"); pText.className = "print-note-text"; 
-            pText.innerText = (isHol && !d.note) ? "" : fullNote;
-            cNote.appendChild(wrapper); cNote.appendChild(pText);
+            const oFree = document.createElement("option"); oFree.value="custom"; oFree.text="自由入力"; select.add(oFree);
+            wrapper.append(select);
+            const pText = document.createElement("span"); pText.className = "print-note-text"; pText.innerText = finalNote;
+            cNote.append(wrapper, pText);
 
             row.insertCell(7).className = "stamp-col";
             const cDel = row.insertCell(8); cDel.className = "del-col";
-            const delBtn = document.createElement("button"); delBtn.innerText = "消"; delBtn.className = "btn-del"; delBtn.onclick = () => deleteDay(date);
-            cDel.appendChild(delBtn);
+            const btn = document.createElement("button"); btn.innerText="消"; btn.className="btn-del"; btn.onclick=()=> { delete data[date]; localStorage.setItem('attendance_data', JSON.stringify(data)); displayLogs(); };
+            cDel.append(btn);
 
             if (d.absent) tAbsent++; else if (d.in) tDays++;
-            tWork += rowWork; tOver += rowOver; if (isLate) tLate++;
+            tWork += rowWork; tOver += rowOver; if (isLate) tLate++; if (isEarly) tEarly++;
         });
 
         document.getElementById('total-days').innerText = tDays;
         document.getElementById('total-absent').innerText = tAbsent;
         document.getElementById('total-late').innerText = tLate;
+        document.getElementById('total-early').innerText = tEarly;
         document.getElementById('total-paid-leave').innerText = tPaidLeave.toFixed(1);
         document.getElementById('total-work-h').innerText = tWork.toFixed(2);
         document.getElementById('total-over-h').innerText = tOver.toFixed(2);
@@ -456,6 +378,11 @@
         document.getElementById('p-month-title').innerText = `${parts[0]}年${parseInt(parts[1])}月分 タイムカード`;
         document.getElementById('p-office-text').innerText = "事業所：" + document.getElementById('office-name').value;
         document.getElementById('p-name-text').innerText = document.getElementById('staff-name').value;
+        const lH = Math.floor(totalLateMinutes / 60);
+        const lM = totalLateMinutes % 60;
+        const eH = Math.floor(totalEarlyMinutes / 60);
+        const eM = totalEarlyMinutes % 60;
+        document.getElementById('print-footer-note').innerText = `【備考】 遅刻合計：${totalLateMinutes > 0 ? lH+'時間'+lM+'分' : '0分'} / 早退合計：${totalEarlyMinutes > 0 ? eH+'時間'+eM+'分' : '0分'}`;
         window.print();
     }
 </script>
