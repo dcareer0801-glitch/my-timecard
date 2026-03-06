@@ -39,6 +39,13 @@
         .summary-table td { border: 1px solid #000; padding: 6px 2px; text-align: center; font-weight: bold; background: #fff; font-size: 0.95rem; }
         .print-note-text, .print-footer-note, .stamp-col, .print-header-info { display: none; }
 
+        @keyframes flash-green { 0% { background-color: rgba(39, 174, 96, 0.8); } 100% { background-color: transparent; } }
+        @keyframes flash-red { 0% { background-color: rgba(231, 76, 60, 0.8); } 100% { background-color: transparent; } }
+        @keyframes flash-purple { 0% { background-color: rgba(142, 68, 173, 0.8); } 100% { background-color: transparent; } }
+        .flash-in { animation: flash-green 1s ease-out; }
+        .flash-out { animation: flash-red 1s ease-out; }
+        .flash-absent { animation: flash-purple 1s ease-out; }
+
         @media print {
             @page { size: A4 portrait; margin: 5mm 8mm; } 
             body { background: white !important; background-image: none !important; padding: 0 !important; margin: 0 !important; width: 100%; overflow: visible !important; }
@@ -143,7 +150,6 @@
         return holidays.includes(dateStr);
     }
 
-    // 平日なら入力値、土日祝なら0を返す
     function getDefaultBreak(dateStr) {
         const d = new Date(dateStr);
         if (d.getDay() === 0 || d.getDay() === 6 || isHoliday(dateStr)) return "0";
@@ -189,7 +195,7 @@
             data[date].in = ""; data[date].out = ""; data[date].absent = true; data[date].note = "欠勤"; 
         }
         localStorage.setItem('attendance_data', JSON.stringify(data));
-        displayLogs();
+        displayLogs(date, type);
     }
 
     function parseToMin(str) {
@@ -224,7 +230,7 @@
             if (field === 'over') {
                 data[date].editedOver = newVal;
             } else if (field === 'break') {
-                data[date].break = newVal; // 休憩時間の修正を反映
+                data[date].break = newVal;
             } else {
                 data[date][field] = formatTimeInput(newVal, field);
                 if (field === 'in') data[date].editedIn = true;
@@ -237,6 +243,9 @@
 
     function handleNoteChange(date, val) {
         let data = JSON.parse(localStorage.getItem('attendance_data')) || {};
+        // 【修正箇所】データ枠が存在しない場合は作成してから保存する処理を追加
+        if (!data[date]) data[date] = { in: "", out: "", break: getDefaultBreak(date), absent: false, note: "" };
+        
         if (val === "custom") {
             let freeVal = prompt("備考を入力", data[date].note || "");
             if (freeVal !== null) data[date].note = freeVal;
@@ -247,7 +256,7 @@
         displayLogs();
     }
 
-    function displayLogs() {
+    function displayLogs(targetDate = null, flashType = null) {
         let data = JSON.parse(localStorage.getItem('attendance_data')) || {};
         const tbody = document.getElementById('log-body');
         const selectedMonth = document.getElementById('month-picker').value;
@@ -259,18 +268,15 @@
         totalLateMinutes = 0;
         totalEarlyMinutes = 0;
 
-        if (selectedMonth) {
-            const [sYear, sMonth] = selectedMonth.split('-').map(Number);
-            let lastDay = new Date(sYear, sMonth, 0).getDate();
-            for (let i = 1; i <= lastDay; i++) {
-                const dStr = `${sYear}-${sMonth.toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
-                if (!data[dStr]) data[dStr] = { in: "", out: "", break: getDefaultBreak(dStr), absent: false, note: "" };
-            }
+        const [sYear, sMonth] = selectedMonth.split('-').map(Number);
+        const lastDay = new Date(sYear, sMonth, 0).getDate();
+        const monthDates = [];
+        for (let i = 1; i <= lastDay; i++) {
+            monthDates.push(`${sYear}-${sMonth.toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`);
         }
 
-        Object.keys(data).sort().forEach(date => {
-            if (date.substring(0, 7) !== selectedMonth) return;
-            const d = data[date];
+        monthDates.forEach(date => {
+            const d = data[date] || { in: "", out: "", break: getDefaultBreak(date), absent: false, note: "" };
             let rowWork = 0, rowOver = 0, isLate = false, isEarly = false, rowClass = "", alertMsg = "";
             const dateObj = new Date(date), isHol = isHoliday(date), dayIdx = dateObj.getDay();
             
@@ -291,7 +297,9 @@
                 }
             }
 
-            if (d.note.includes("有給")) tPaidLeave += 1.0; else if (d.note.includes("半休")) tPaidLeave += 0.5;
+            if (d.note.includes("有給")) tPaidLeave += 1.0; 
+            else if (d.note.includes("半休")) tPaidLeave += 0.5;
+            
             if (d.editedOver !== undefined && d.editedOver !== "") rowOver = parseFloat(d.editedOver) || 0;
             if (!d.absent) {
                 if (!d.in && date === todayStr) alertMsg = "【未】";
@@ -305,23 +313,25 @@
 
             const row = tbody.insertRow();
             if (rowClass) row.className = rowClass;
-            row.insertCell(0).innerText = `${date.replace(/-/g, '/')} (${weekDays[dayIdx]})`;
             
-            // 出勤
+            if (date === targetDate) {
+                row.className += ` flash-${flashType}`;
+                setTimeout(() => row.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+            }
+
+            row.insertCell(0).innerText = `${date.replace(/-/g, '/')} (${weekDays[dayIdx]})`;
             const cIn = row.insertCell(1);
             const divIn = document.createElement("div"); divIn.className="time-cell-inner"; divIn.onclick=()=>editValue(date,'in');
             const dotIn = document.createElement("span"); dotIn.className = d.editedIn ? "dot" : "dot dot-hidden";
             const valIn = document.createElement("span"); valIn.className="time-val"; valIn.innerText=d.in||"";
             divIn.append(dotIn, valIn); cIn.append(divIn);
 
-            // 退勤
             const cOut = row.insertCell(2);
             const divOut = document.createElement("div"); divOut.className="time-cell-inner"; divOut.onclick=()=>editValue(date,'out');
             const dotOut = document.createElement("span"); dotOut.className = d.editedOut ? "dot" : "dot dot-hidden";
             const valOut = document.createElement("span"); valOut.className="time-val"; valOut.innerText=d.out||"";
             divOut.append(dotOut, valOut); cOut.append(divOut);
 
-            // 休憩（修正可能）
             const cBreak = row.insertCell(3);
             cBreak.style.cursor = "pointer";
             cBreak.onclick = () => editValue(date, 'break');
