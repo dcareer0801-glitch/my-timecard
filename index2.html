@@ -243,7 +243,6 @@
 
     function handleNoteChange(date, val) {
         let data = JSON.parse(localStorage.getItem('attendance_data')) || {};
-        // 【修正箇所】データ枠が存在しない場合は作成してから保存する処理を追加
         if (!data[date]) data[date] = { in: "", out: "", break: getDefaultBreak(date), absent: false, note: "" };
         
         if (val === "custom") {
@@ -292,8 +291,14 @@
                 if (rawWorkMin > 0) {
                     let dayWorkH = Math.floor(rawWorkMin / 15) * 0.25;
                     rowWork = dayWorkH;
-                    if (dayIdx === 6 || dayIdx === 0 || isHol) rowOver = dayWorkH;
-                    else if (dayWorkH > 8) rowOver = dayWorkH - 8;
+                    
+                    /* 【修正箇所】祝日は平日同様「8時間を超えたら残業」に設定 */
+                    if (dayIdx === 6 || dayIdx === 0) {
+                        rowOver = dayWorkH; // 土日は今まで通り全額残業
+                    } else {
+                        // 平日および祝日は8時間を超えた分だけ残業
+                        if (dayWorkH > 8) rowOver = dayWorkH - 8;
+                    }
                 }
             }
 
